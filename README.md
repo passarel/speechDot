@@ -1,0 +1,2 @@
+# speechdot
+HP SpeechDot repository
