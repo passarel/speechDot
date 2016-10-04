@@ -1,0 +1,97 @@
+
+serviceName: org.ofono
+objectPath: /
+[ProcessManager.js] failed to getModems: Error: No introspectable
+Ofono dbus is online
+removed all signalHandlers for ModemAdded on org.ofono,/,org.ofono.Manager
+added signalHandler for ModemAdded on org.ofono,/,org.ofono.Manager
+Bluez dbus is online
+
+-------------------- PULSEAUDIO STARTUP BEGIN --------------------
+removed all signalHandlers for InterfacesAdded on org.bluez,/,org.freedesktop.DBus.ObjectManager
+added signalHandler for InterfacesAdded on org.bluez,/,org.freedesktop.DBus.ObjectManager
+removed all signalHandlers for InterfacesRemoved on org.bluez,/,org.freedesktop.DBus.ObjectManager
+added signalHandler for InterfacesRemoved on org.bluez,/,org.freedesktop.DBus.ObjectManager
+[Bluez.js] attempting to add device...
+[Bluez.js] attempting to add device...
+[Bluez.js] attempting to add device...
+removed all signalHandlers for PropertyChanged on org.ofono,/hfp/org/bluez/hci0/dev_F0_DB_E2_DF_A0_B7,org.ofono.Modem
+added signalHandler for PropertyChanged on org.ofono,/hfp/org/bluez/hci0/dev_F0_DB_E2_DF_A0_B7,org.ofono.Modem
+removed all signalHandlers for PropertyChanged on org.ofono,/hfp/org/bluez/hci0/dev_40_40_A7_1A_7A_E8,org.ofono.Modem
+added signalHandler for PropertyChanged on org.ofono,/hfp/org/bluez/hci0/dev_40_40_A7_1A_7A_E8,org.ofono.Modem
+removed all signalHandlers for PropertyChanged on org.ofono,/hfp/org/bluez/hci1/dev_F0_DB_E2_DF_A0_B7,org.ofono.Modem
+added signalHandler for PropertyChanged on org.ofono,/hfp/org/bluez/hci1/dev_F0_DB_E2_DF_A0_B7,org.ofono.Modem
+removed all signalHandlers for PropertiesChanged on org.bluez,/org/bluez/hci0/dev_F0_DB_E2_DF_A0_B7,org.freedesktop.DBus.Properties
+[Bluez.js] device added: {"Address":"F0:DB:E2:DF:A0:B7","Name":"Louis iPhone ","Alias":"Louis iPhone ","Class":7995916,"Icon":"phone","Paired":true,"Trusted":true,"Blocked":false,"LegacyPairing":false,"Connected":false,"UUIDs":["00000000-deca-fade-deca-deafdecacafe","00001000-0000-1000-8000-00805f9b34fb","0000110a-0000-1000-8000-00805f9b34fb","0000110c-0000-1000-8000-00805f9b34fb","0000110d-0000-1000-8000-00805f9b34fb","0000110e-0000-1000-8000-00805f9b34fb","00001116-0000-1000-8000-00805f9b34fb","0000111f-0000-1000-8000-00805f9b34fb","0000112f-0000-1000-8000-00805f9b34fb","00001132-0000-1000-8000-00805f9b34fb","00001200-0000-1000-8000-00805f9b34fb"],"Modalias":"bluetooth:v004Cp6E00d0930","Adapter":"/org/bluez/hci0","path":"/org/bluez/hci0/dev_F0_DB_E2_DF_A0_B7"}
+added signalHandler for PropertiesChanged on org.bluez,/org/bluez/hci0/dev_F0_DB_E2_DF_A0_B7,org.freedesktop.DBus.Properties
+removed all signalHandlers for PropertiesChanged on org.bluez,/org/bluez/hci0/dev_40_40_A7_1A_7A_E8,org.freedesktop.DBus.Properties
+[Bluez.js] device added: {"Address":"40:40:A7:1A:7A:E8","Name":"Xperia Z3 Compact","Alias":"Xperia Z3 Compact","Class":5898764,"Icon":"phone","Paired":true,"Trusted":true,"Blocked":false,"LegacyPairing":false,"Connected":false,"UUIDs":["00001105-0000-1000-8000-00805f9b34fb","0000110a-0000-1000-8000-00805f9b34fb","0000110c-0000-1000-8000-00805f9b34fb","0000110d-0000-1000-8000-00805f9b34fb","0000110e-0000-1000-8000-00805f9b34fb","00001112-0000-1000-8000-00805f9b34fb","00001115-0000-1000-8000-00805f9b34fb","00001116-0000-1000-8000-00805f9b34fb","0000111f-0000-1000-8000-00805f9b34fb","0000112f-0000-1000-8000-00805f9b34fb","00001132-0000-1000-8000-00805f9b34fb","00001200-0000-1000-8000-00805f9b34fb","00001800-0000-1000-8000-00805f9b34fb","00001801-0000-1000-8000-00805f9b34fb","3769911d-6539-4c7c-8f59-0f15bec07683","8e780202-0000-1000-8000-00805f9b34fb"],"Modalias":"usb:v0FCEp01BBd0010","Adapter":"/org/bluez/hci0","path":"/org/bluez/hci0/dev_40_40_A7_1A_7A_E8"}
+added signalHandler for PropertiesChanged on org.bluez,/org/bluez/hci0/dev_40_40_A7_1A_7A_E8,org.freedesktop.DBus.Properties
+removed all signalHandlers for PropertiesChanged on org.bluez,/org/bluez/hci1/dev_F0_DB_E2_DF_A0_B7,org.freedesktop.DBus.Properties
+[Bluez.js] device added: {"Address":"F0:DB:E2:DF:A0:B7","Name":"Louis iPhone ","Alias":"Louis iPhone ","Class":7995916,"Icon":"phone","Paired":true,"Trusted":true,"Blocked":false,"LegacyPairing":false,"Connected":false,"UUIDs":["00000000-deca-fade-deca-deafdecacafe","00001000-0000-1000-8000-00805f9b34fb","0000110a-0000-1000-8000-00805f9b34fb","0000110c-0000-1000-8000-00805f9b34fb","0000110d-0000-1000-8000-00805f9b34fb","0000110e-0000-1000-8000-00805f9b34fb","00001116-0000-1000-8000-00805f9b34fb","0000111f-0000-1000-8000-00805f9b34fb","0000112f-0000-1000-8000-00805f9b34fb","00001132-0000-1000-8000-00805f9b34fb","00001200-0000-1000-8000-00805f9b34fb"],"Modalias":"bluetooth:v004Cp6E00d0930","Adapter":"/org/bluez/hci1","path":"/org/bluez/hci1/dev_F0_DB_E2_DF_A0_B7"}
+added signalHandler for PropertiesChanged on org.bluez,/org/bluez/hci1/dev_F0_DB_E2_DF_A0_B7,org.freedesktop.DBus.Properties
+removed all signalHandlers for PropertiesChanged on org.bluez,/org/bluez/hci0,org.freedesktop.DBus.Properties
+added signalHandler for PropertiesChanged on org.bluez,/org/bluez/hci0,org.freedesktop.DBus.Properties
+[error] HandsFreeAudioAgent.unregisterAgent - Error: org.ofono.Error.NotFound
+Error: org.ofono.Error.NotFound
+    at Error (native)
+removed all signalHandlers for CardRemoved on org.ofono,/,org.ofono.HandsfreeAudioManager
+removed all signalHandlers for CardAdded on org.ofono,/,org.ofono.HandsfreeAudioManager
+added signalHandler for CardRemoved on org.ofono,/,org.ofono.HandsfreeAudioManager
+added signalHandler for CardAdded on org.ofono,/,org.ofono.HandsfreeAudioManager
+removed all signalHandlers for PropertiesChanged on org.bluez,/org/bluez/hci1,org.freedesktop.DBus.Properties
+added signalHandler for PropertiesChanged on org.bluez,/org/bluez/hci1,org.freedesktop.DBus.Properties
+handsfree audio agent started
+-------------------- PULSEAUDIO STARTUP END --------------------
+
+Sensory is online
+Local speaker volume set to 50%
+Local mic volume set to 85%
+  playAudioResponse: speech_dot_online.wav
+Loading trig recognizer: nn_en_us_mfcc_16k_15_250_v5.1.1.raw
+Loading cmd recognizer: nn_en_us_mfcc_16k_15_250_v5.1.1.raw
+Loading pronunciation model: lts_en_us_9.5.2b.raw
+Loading pronunciation model: lts_en_us_9.5.2b.raw
+Compiling trig search...
+Compiling cmd search...
+Setting trig parameters...
+Setting cmd parameters...
+Initializing trigger recognizer...
+Initializing cmd recognizer...
+Initializing audio...
+[Bluez.Adapter] PropertyChanged: /org/bluez/hci0, Class=2097152
+execSync: hciconfig hci0 class 0x240404
+[Bluez.Adapter] PropertyChanged: /org/bluez/hci0, Powered=true
+[Bluez.Adapter] PropertyChanged: /org/bluez/hci0, Class=2621440
+execSync: hciconfig hci0 class 0x240404
+[Bluez.Adapter] PropertyChanged: /org/bluez/hci0, UUIDs=00001112-0000-1000-8000-00805f9b34fb,00001801-0000-1000-8000-00805f9b34fb,0000110e-0000-1000-8000-00805f9b34fb,00001800-0000-1000-8000-00805f9b34fb,00001200-0000-1000-8000-00805f9b34fb,0000110c-0000-1000-8000-00805f9b34fb,0000110b-0000-1000-8000-00805f9b34fb,0000110a-0000-1000-8000-00805f9b34fb,0000111e-0000-1000-8000-00805f9b34fb
+[Bluez.Adapter] PropertyChanged: /org/bluez/hci0, Class=2883584
+execSync: hciconfig hci0 class 0x240404
+[Bluez.Adapter] PropertyChanged: /org/bluez/hci0, UUIDs=00001112-0000-1000-8000-00805f9b34fb,00001801-0000-1000-8000-00805f9b34fb,0000110e-0000-1000-8000-00805f9b34fb,00001800-0000-1000-8000-00805f9b34fb,00001200-0000-1000-8000-00805f9b34fb,0000110c-0000-1000-8000-00805f9b34fb,0000110b-0000-1000-8000-00805f9b34fb,0000110a-0000-1000-8000-00805f9b34fb,0000111e-0000-1000-8000-00805f9b34fb
+[Bluez.Adapter] PropertyChanged: /org/bluez/hci1, UUIDs=00001112-0000-1000-8000-00805f9b34fb,00001801-0000-1000-8000-00805f9b34fb,0000110e-0000-1000-8000-00805f9b34fb,00001800-0000-1000-8000-00805f9b34fb,00001200-0000-1000-8000-00805f9b34fb,0000110c-0000-1000-8000-00805f9b34fb,0000110b-0000-1000-8000-00805f9b34fb,0000110a-0000-1000-8000-00805f9b34fb,0000111e-0000-1000-8000-00805f9b34fb
+[Bluez.Adapter] PropertyChanged: /org/bluez/hci0, UUIDs=00001112-0000-1000-8000-00805f9b34fb,00001801-0000-1000-8000-00805f9b34fb,0000110e-0000-1000-8000-00805f9b34fb,00001800-0000-1000-8000-00805f9b34fb,00001200-0000-1000-8000-00805f9b34fb,0000110c-0000-1000-8000-00805f9b34fb,0000110b-0000-1000-8000-00805f9b34fb,0000110a-0000-1000-8000-00805f9b34fb,0000111e-0000-1000-8000-00805f9b34fb
+[Bluez.Adapter] PropertyChanged: /org/bluez/hci0, Class=2360324
+[Bluez.Device] PropertyChanged: /org/bluez/hci0/dev_F0_DB_E2_DF_A0_B7, Connected=true
+[Bluez.Adapter] PropertyChanged: /org/bluez/hci1, Class=2883584
+execSync: hciconfig hci1 class 0x240404
+all bluetooth adapters are now powered on
+[Bluez.Adapter] PropertyChanged: /org/bluez/hci1, Powered=true
+[Bluez.Adapter] PropertyChanged: /org/bluez/hci1, Class=2360324
+all bluetooth adapters are configured
+[error] PairingAgent.unregisterAgent - Error: org.bluez.Error.DoesNotExist
+Error: org.bluez.Error.DoesNotExist
+    at Error (native)
+[error] connect device(/org/bluez/hci0/dev_F0_DB_E2_DF_A0_B7) - Error: org.bluez.Error.Failed
+pairing agent started
+[error] SerialPortProfile.unregisterProfile - Error: org.bluez.Error.DoesNotExist
+Error: org.bluez.Error.DoesNotExist
+    at Error (native)
+[Bluez.Adapter] PropertyChanged: /org/bluez/hci1, Class=2883584
+execSync: hciconfig hci1 class 0x240404
+[Bluez.Adapter] PropertyChanged: /org/bluez/hci1, UUIDs=00001112-0000-1000-8000-00805f9b34fb,00001801-0000-1000-8000-00805f9b34fb,0000110e-0000-1000-8000-00805f9b34fb,00001800-0000-1000-8000-00805f9b34fb,00001200-0000-1000-8000-00805f9b34fb,0000110c-0000-1000-8000-00805f9b34fb,0000110b-0000-1000-8000-00805f9b34fb,0000110a-0000-1000-8000-00805f9b34fb,0000111e-0000-1000-8000-00805f9b34fb,00001101-0000-1000-8000-00805f9b34fb
+[Bluez.Adapter] PropertyChanged: /org/bluez/hci0, Class=2883584
+execSync: hciconfig hci0 class 0x240404
+[Bluez.Adapter] PropertyChanged: /org/bluez/hci0, UUIDs=00001112-0000-1000-8000-00805f9b34fb,00001801-0000-1000-8000-00805f9b34fb,0000110e-0000-1000-8000-00805f9b34fb,00001800-0000-1000-8000-00805f9b34fb,00001200-0000-1000-8000-00805f9b34fb,0000110c-0000-1000-8000-00805f9b34fb,0000110b-0000-1000-8000-00805f9b34fb,0000110a-0000-1000-8000-00805f9b34fb,0000111e-0000-1000-8000-00805f9b34fb,00001101-0000-1000-8000-00805f9b34fb
+[Bluez.Adapter] PropertyChanged: /org/bluez/hci1, Class=2360324
+[Bluez.Adapter] PropertyChanged: /org/bluez/hci0, Class=2360324
+serialport profile started

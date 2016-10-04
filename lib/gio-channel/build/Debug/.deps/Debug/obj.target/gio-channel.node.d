@@ -1,0 +1,1 @@
+cmd_Debug/obj.target/gio-channel.node := g++ -shared -pthread -rdynamic  -Wl,-soname=gio-channel.node -o Debug/obj.target/gio-channel.node -Wl,--start-group Debug/obj.target/gio-channel/src/gio_channel.o -Wl,--end-group -lglib-2.0

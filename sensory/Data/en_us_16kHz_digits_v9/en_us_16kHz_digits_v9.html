@@ -1,0 +1,96 @@
+<!-*- html -*->
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<!--Copyright (C)2002-2015 Sensory Inc-->
+<title>Language Pack: American English Digits</title>
+<style>
+ P   {}
+ H1  {color:#5AB861; font-size:large}
+ H2  {color:#5AB861; font-size:medium}
+ H3  {color:#5AB861; font-size:small}
+ H4  {color:#5AB861; font-size:small}
+ A   {color:#FF5151; text-decoration:none}
+ A:Visited  {color:#FF5151; text-decoration:none}
+ A:Active   {color:Orange; text-decoration:none}
+ A:Hover    {color:Orange; text-decoration:none}
+ PRE  {color:#4040ff; font-size:small; background:#f8f8f8}
+ Strong {color:#a02020}
+ BODY {font-size:small; font-family:sans-serif; color:#666666; margin-left:5%; margin-right:5%; margin-top:50; margin-bottom:50}
+     .ghosted  {color:#cdcdcd}
+     .frozen   {color:#70d0ff; font-weight:bold}
+ th  {font-size:small; font-family:sans-serif; font-weight:bold; 
+                 color:#666666; background-color:White; padding-left:2; padding-right:2}
+ td  {font-size:small; font-family:sans-serif; color:#666666; background-color:White; padding-left:2; padding-right:2}
+ .invertfrozen {font-weight:bold; color:White; background-color:#70d0ff}
+ table  {background-color:#f8f8f8}
+ .smallghosted  {color:#cdcdcd; font-size:10}
+ code {font-family:Lucida Sans Unicode,Arial Unicode MS; font-size:small; font-weight:medium}
+</style>
+</head>
+
+<body bgcolor=#ffffff text=#00qt2s0000>
+<center>
+<h2 ID="lpack-en_us_digits">American English Digits Language Pack</h2>
+<h3>Version en_us_16kHz_digits_v9</h3>
+<a target=blank href="http://www.sensory.com"> www.sensory.com</a>
+ <br>
+ Copyright (c) 2002-2015, Sensory Inc.
+            <br>
+ All rights reserved.
+            </p>
+</center>
+<object type="application/x-oleobject" classid="clsid:1e2a7bd0-dab9-11d0-b93a-00c04fc99f9e">
+<param name="New HTML file" value="Summary_en_us_digits.html">
+</object>
+<h3>Summary</h3>
+<p><b>Version</b>: en_us_16kHz_digits_v9</p>
+<p><b>Language</b>: English</p>
+<p><b>Task</b>: Digits (Task-specific)</p>
+<p><b>Age </b>: Adults</p>
+<p><b>Sample rate</b>: 16000 Hz</p>
+<p><b>Dialects:</b></p>
+<p>See thfPronunCreateFromFile(), thfPronunCreateFromStatic()</p>
+<table>
+<tr><td>Dialect Index</td><td>Dialect Description</td></tr>
+<tr><td><b>0</b></td><td>Default</td></tr>
+</table></p>
+<b>Acoustic Models</b>:<ul>
+<li>nn_en_us_digits_digit_mfcc_15_250_v6.2
+</ul>
+<b>Part-of-Speech:</b></p>
+Unavailable
+<object type="application/x-oleobject" classid="clsid:1e2a7bd0-dab9-11d0-b93a-00c04fc99f9e">
+<param name="New HTML file" value="Phones_en_us_digits.html">
+</object>
+<h3 ID="Phones-en_us_digits">Task-Specific Vocabulary</h3>
+<p>This language pack contains task-specific acoustic models that supported a fixed vocabulary with pre-defined pronunciations. Only the following vocabulary items can be referenced by your grammar specification:</p>
+<p>
+<ul><li>zero
+<li>three
+<li>seven
+<li>one
+<li>two
+<li>four
+<li>eight
+<li>five
+<li>nine
+<li>*sil
+<li>*nota
+<li>six
+<li>oh
+<li>.nota
+<li>.pau
+<li>.any
+</ul></p>
+
+<p><b>NOTE:</b> You must use <em>thfSearchCreateFromGrammar()</em> to compile your task-specific vocabulary. Refer to the main TrulyHandsfree SDK documentation for additional information.</p>
+<object type="application/x-oleobject" classid="clsid:1e2a7bd0-dab9-11d0-b93a-00c04fc99f9e">
+<param name="New HTML file" value="Performance_en_us_digits.html">
+</object>
+<h3 ID="Phones-en_us_digits">Acoustic Model Selection and Performance</h3>
+<p>A selection of acoustic models are available that have different size, accuracy and processing speed characteristics. The one to use will depend on what resources are available on the target device. Typically acoustic models vary with respect to samplerate, framesize, size of hidden layer as indicated in the model name (e.g., nn_&lt;language&gt;_&lt;dialect&gt;_&lt;samplerate&gt;_&lt;framesize&gt;_&lt;hidden layer size&gt;_&lt;version&gt;.raw). In terms of accuracy, higher samplerates are more accurate (i.e., 16kHz is preferred to 8kHz), smaller framesizes are more accurate (i.e., 15ms is preferred to 20ms), and larger hidden layers are more accurate (e.g., 250 hidden nodes are preferred to 100). In terms of system resources, framesize have the greatest influence on MIPs requirements while the hidden layer size has the greatest influence on memory requirements.</p><p> As a general rule, you should first decide on the samplerate (often dictated by available audio formats) , then framesize and lastly the hidden layer size. If MIPs are restricted select a model with larger framesize. If memory is restricted, select a smaller hidden layer.
+</p>
+
+</body>
+</html>

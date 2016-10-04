@@ -1,0 +1,217 @@
+/*
+ * Sensory Confidential
+ *
+ * Copyright (C)2000-2015 Sensory Inc.
+ *
+ *---------------------------------------------------------------------------
+ * Sensory TrulyHandsfree SDK Example: PhraseSpot.c
+ *---------------------------------------------------------------------------
+ */
+
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+#include <trulyhandsfree.h>
+
+#include <console.h>
+#include <audio.h>
+#include <datalocations.h>
+
+#define MODE_LOAD_CUSTOM  (1)  // Load pre-built custom HBG vocabulary from file (uses custom HBG acoustic model)
+#define MODE_BUILD_MANUAL (2)  // Build vocabulary with explicit phrasespot parameters (uses gerenic acoustic model)
+#define MODE_BUILD_AUTO   (3)  // Build vocabulary with automatic phrasespot parameters (uses generic acoustic model)
+
+#define BUILD_MODE        (MODE_BUILD_AUTO)
+
+#define GENDER_DETECT (1)  // Enable/disable gender detection
+
+//#define HBG_GENDER_MODEL "hbg_genderModel.raw"
+#define HBG_GENDER_MODEL "/home/pi/speakspoke/sensory/Samples/Data/hbg_genderModel.raw"
+
+//#define HBG_NETFILE      "sensory_demo_hbg_en_us_sfs_delivery04_pruned_search_am.raw"
+#define HBG_NETFILE      "/home/pi/speakspoke/sensory/Samples/Data/sensory_demo_hbg_en_us_sfs_delivery04_pruned_search_am.raw"
+
+//#define HBG_SEARCHFILE   "sensory_demo_hbg_en_us_sfs_delivery04_pruned_search_9.raw" // pre-built search
+#define HBG_SEARCHFILE   "/home/pi/speakspoke/sensory/Samples/Data/sensory_demo_hbg_en_us_sfs_delivery04_pruned_search_9.raw" // pre-built search
+
+#define HBG_OUTFILE      "myhbg.raw"           /* hbg output search */
+
+#define NBEST              (1)                /* Number of results */
+#define PHRASESPOT_PARAMA_OFFSET   (0)        /* Phrasespotting ParamA Offset */
+#define PHRASESPOT_BEAM    (100.f)            /* Pruning beam */
+#define PHRASESPOT_ABSBEAM (100.f)            /* Pruning absolute beam */
+#if GENDER_DETECT
+# define PHRASESPOT_DELAY  15                 /* Phrasespotting Delay */
+#else
+# define PHRASESPOT_DELAY  PHRASESPOT_DELAY_ASAP  /* Phrasespotting Delay */
+#endif
+#define MAXSTR             (512)              /* Output string size */
+#define SHOWAMP            (0)                /* Display amplitude */
+
+#define THROW(a) { ewhere=(a); goto error; }
+#define THROW2(a,b) {ewhere=(a); ewhat=(b); goto error; }
+
+#define KEEP_FEATURES  0
+#define SDET_TSILENCE  500
+#define SDET_LSILENCE  5000
+#define BEAM  200.0f
+
+char *formatExpirationDate(time_t expiration) {
+	static char expdate[33];
+	if (!expiration)
+		return "never";
+	strftime(expdate, 32, "%m/%d/%Y 00:00:00 GMT", gmtime(&expiration));
+	return expdate;
+}
+
+#if defined(__iOS__)
+int Phrasespot(void *inst)
+#else
+int main(int argc, char **argv)
+#define inst NULL
+#endif
+{
+	const char *rres;
+	thf_t *ses = NULL;
+
+	recog_t *r_trig = NULL;
+	pronuns_t *pp_trig = NULL;
+	searchs_t *s_trig = NULL;
+	unsigned short trigCount = 2;
+	const char *trigs[] = { "Yes", "No" };
+
+	char str[MAXSTR];
+	const char *ewhere, *ewhat = NULL;
+	float score, delay, from, to, garbage, any, nota;
+	unsigned short status, done = 0;
+	audiol_t *p;
+	unsigned short i = 0;
+	void *cons = NULL;
+
+	float paramAOffset, beam, absbeam;
+
+	// Draw console
+	if (!(cons = initConsole(inst)))
+		return 1;
+
+	// Create SDK session
+	if (!(ses = thfSessionCreate())) {
+		panic(cons, "thfSessionCreate", thfGetLastError(NULL), 0);
+		return 1;
+	}
+
+	//----------------------------------------------------------------------------------------------------------------------------------------
+	// Create recognizers
+	disp(cons, "Loading trig recognizer: " NETFILE);
+	if (!(r_trig = thfRecogCreateFromFile(ses, THF_DATADIR NETFILE, 0xffff, 0xffff, NO_SDET)))
+		THROW("thfRecogCreateFromFile");
+	//----------------------------------------------------------------------------------------------------------------------------------------
+
+	//----------------------------------------------------------------------------------------------------------------------------------------
+	// Create pronunciations
+	disp(cons, "Loading pronunciation model: " LTSFILE);
+	if (!(pp_trig = thfPronunCreateFromFile(ses, THF_DATADIR LTSFILE, 0)))
+		THROW("thfPronunCreateFromFile");
+	//----------------------------------------------------------------------------------------------------------------------------------------
+
+	//----------------------------------------------------------------------------------------------------------------------------------------
+	// Create searches
+	disp(cons, "Compiling trig search...");
+	if (!(s_trig = thfPhrasespotCreateFromList(ses, r_trig, pp_trig, (const char**) trigs, trigCount, NULL, NULL, 0, PHRASESPOT_LISTEN_CONTINUOUS)))
+		THROW("thfPhrasespotCreateFromList");
+	//----------------------------------------------------------------------------------------------------------------------------------------
+
+	//----------------------------------------------------------------------------------------------------------------------------------------
+	// Configure parameters
+	disp(cons, "Setting trig parameters...");
+	paramAOffset = PHRASESPOT_PARAMA_OFFSET;
+	beam = PHRASESPOT_BEAM;
+	absbeam = PHRASESPOT_ABSBEAM;
+	delay = PHRASESPOT_DELAY;
+	if (!thfPhrasespotConfigSet(ses, r_trig, s_trig, PS_PARAMA_OFFSET, paramAOffset))
+		THROW("thfPhrasespotConfigSet: parama_offset");
+	if (!thfPhrasespotConfigSet(ses, r_trig, s_trig, PS_BEAM, beam))
+		THROW("thfPhrasespotConfigSet: beam");
+	if (!thfPhrasespotConfigSet(ses, r_trig, s_trig, PS_ABSBEAM, absbeam))
+		THROW("thfPhrasespotConfigSet: absbeam");
+	if (!thfPhrasespotConfigSet(ses, r_trig, s_trig, PS_DELAY, delay))
+		THROW("thfPhrasespotConfigSet: delay");
+	if (!thfPhrasespotConfigSet(ses, r_trig, s_trig, PS_SEQ_BUFFER, 1000))
+		THROW("thfPhrasespotConfigSet: ps_seq_buffer");
+	//----------------------------------------------------------------------------------------------------------------------------------------
+
+
+	// Initialize trigger recognizer
+	disp(cons, "Initializing trigger recognizer...");
+	if (!thfRecogInit(ses, r_trig, s_trig, RECOG_KEEP_WAVE_WORD)) THROW("thfRecogInit");
+
+	// Initialize audio
+	disp(cons, "Initializing audio...");
+	initAudio(inst, cons);
+
+	for (i = 1;; i++) {
+		if (startRecord() == RECOG_NODATA)
+			break;
+
+		if (!thfRecogReset(ses, r_trig))
+			THROW("thfRecogReset");
+
+		done = 0;
+		while (!done) {
+			audioEventLoop();
+			while ((p = audioGetNextBuffer(&done)) && !done) {
+				if (!thfRecogPipe(ses, r_trig, p->len, p->audio, RECOG_ONLY, &status)) {
+					panic(cons, "thfRecogPipe", thfGetLastError(ses), 0);
+					return 1;
+				}
+				audioNukeBuffer(p);
+				p = NULL;
+				if (status == RECOG_DONE) {
+					done = 1;
+				}
+			}
+		}
+
+		rres = NULL;
+		if (status == RECOG_DONE) {
+			const char *walign, *palign;
+			if (!thfRecogResult(ses, r_trig, &score, &rres, &walign, &palign, NULL, NULL, NULL, NULL))
+				THROW("thfRecogResult");
+			if (rres == 0)
+				break;
+			sprintf(str, "%s", rres);
+			disp(cons, str);
+		} else {
+			disp(cons, "No phrasespot recognition result");
+		}
+	}
+
+	inline void cleanup() {
+		killAudio();
+		if (r_trig)
+			thfRecogDestroy(r_trig);
+		r_trig = NULL;
+		if (s_trig)
+			thfSearchDestroy(s_trig);
+		s_trig = NULL;
+		if (pp_trig)
+			thfPronunDestroy(pp_trig);
+		pp_trig = NULL;
+		if (ses)
+			thfSessionDestroy(ses);
+		ses = NULL;
+		disp(cons, "Done");
+	}
+
+	// Clean up
+	cleanup();
+	closeConsole(cons);
+	return 0;
+
+	// Async error handling, see console.h for panic
+	error:
+	panic(cons,ewhere,ewhat,0);
+	cleanup();
+	return 1;
+}

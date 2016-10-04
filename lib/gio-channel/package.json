@@ -1,0 +1,13 @@
+{
+  "name": "gio-channel",
+  "version": "0.0.0",
+  "description": "",
+  "main": "./lib/gio-channel",
+  "private": true,
+  "dependencies": {
+    "bindings": "~1.2.1",
+    "nan": "^2.0.0",
+    "gcontext": "*"
+  },
+  "gypfile": true
+}

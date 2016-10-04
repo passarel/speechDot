@@ -1,0 +1,8 @@
+{
+	"dependencies": {
+		"socket.io": "*",
+		"socket.io-client": "*",
+		"wav": "*",
+		"bindings": "*"
+	}
+}

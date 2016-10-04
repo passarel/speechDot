@@ -1,0 +1,100 @@
+{
+  "_args": [
+    [
+      {
+        "raw": "dbus@*",
+        "scope": null,
+        "escapedName": "dbus",
+        "name": "dbus",
+        "rawSpec": "*",
+        "spec": "*",
+        "type": "range"
+      },
+      "/home/pi/speakspoke"
+    ]
+  ],
+  "_from": "dbus@*",
+  "_id": "dbus@0.2.19",
+  "_inCache": true,
+  "_installable": true,
+  "_location": "/dbus",
+  "_nodeVersion": "5.6.0",
+  "_npmOperationalInternal": {
+    "host": "packages-16-east.internal.npmjs.com",
+    "tmp": "tmp/dbus-0.2.19.tgz_1463714723181_0.05937236687168479"
+  },
+  "_npmUser": {
+    "name": "shouqun",
+    "email": "liushouqun@gmail.com"
+  },
+  "_npmVersion": "3.6.0",
+  "_phantomChildren": {},
+  "_requested": {
+    "raw": "dbus@*",
+    "scope": null,
+    "escapedName": "dbus",
+    "name": "dbus",
+    "rawSpec": "*",
+    "spec": "*",
+    "type": "range"
+  },
+  "_requiredBy": [
+    "/"
+  ],
+  "_resolved": "https://registry.npmjs.org/dbus/-/dbus-0.2.19.tgz",
+  "_shasum": "d1d45924121e9867cf9592beeba732b7587dd458",
+  "_shrinkwrap": null,
+  "_spec": "dbus@*",
+  "_where": "/home/pi/speakspoke",
+  "author": {
+    "name": "Shouqun Liu",
+    "email": "liushouqun@gmail.com"
+  },
+  "bugs": {
+    "url": "https://github.com/Shouqun/node-dbus/issues"
+  },
+  "contributors": [
+    {
+      "name": "Fred Chien",
+      "email": "cfsghost@gmail.com"
+    }
+  ],
+  "dependencies": {
+    "nan": "^2.1.0"
+  },
+  "description": "A D-Bus binding for Node",
+  "devDependencies": {},
+  "directories": {},
+  "dist": {
+    "shasum": "d1d45924121e9867cf9592beeba732b7587dd458",
+    "tarball": "https://registry.npmjs.org/dbus/-/dbus-0.2.19.tgz"
+  },
+  "engines": {
+    "node": ">= 0.8.0"
+  },
+  "gitHead": "a4de7d3aea31f42257099401a1168824cd3e5b96",
+  "homepage": "https://github.com/Shouqun/node-dbus#readme",
+  "license": "MIT",
+  "main": "./lib/dbus",
+  "maintainers": [
+    {
+      "name": "shouqun",
+      "email": "liushouqun@gmail.com"
+    },
+    {
+      "name": "fredchien",
+      "email": "cfsghost@gmail.com"
+    }
+  ],
+  "name": "dbus",
+  "optionalDependencies": {},
+  "readme": "ERROR: No README data found!",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/Shouqun/node-dbus.git"
+  },
+  "scripts": {
+    "install": "node-gyp configure build"
+  },
+  "version": "0.2.19"
+}

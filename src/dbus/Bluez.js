@@ -1,0 +1,476 @@
+const execSync = require('child_process').execSync;
+const ProcessManager = require('../ProcessManager.js');
+const PairingAgent = require('./PairingAgent.js');
+const SerialPortProfile = require('./SerialPortProfile.js');
+const dbusUtils = require('../utils/dbus_utils.js');
+const bus = dbusUtils.bus;
+const notErr = dbusUtils.notErr;
+const addSignalHandler = dbusUtils.addSignalHandler;
+const removeAllHandlersForSignal = dbusUtils.removeAllHandlersForSignal;
+
+const EventEmitter = require('events').EventEmitter;
+const util = require('util');
+util.inherits(Bluez, EventEmitter);
+
+module.exports = new Bluez();
+
+const adapterConfig = {
+	Alias: 'Speech Dot',
+	Discoverable: false, 
+	Pairable: true
+}
+
+function Bluez() {
+	
+	self = this;
+	
+	var addDevice = function(device, onAdded) {
+		console.log('[Bluez.js] attempting to add device...')
+		if (!self.adapters[device.Adapter]) {
+			self.adapters[device.Adapter] = {devices: [], path: device.Adapter};
+		}
+		var devices = self.adapters[device.Adapter].devices;
+		for (var i=0; i<devices.length; i++) {
+			if (devices[i].path === device.path) {
+				console.log('not adding device because device already exists');
+				return;
+			}
+		}
+		self.adapters[device.Adapter].devices.push(device);
+		removeAllHandlersForSignal('org.bluez', device.path, 'org.freedesktop.DBus.Properties', 'PropertiesChanged', function() {
+			addSignalHandler('org.bluez', device.path, 'org.freedesktop.DBus.Properties', 'PropertiesChanged', function(ifaceName, props) {
+				Object.keys(props).forEach(function(name) {
+					var val = props[name];
+					console.log('[Bluez.Device] PropertyChanged: ' + device.path + ', ' + name + '=' + val);
+					device[name] = val;
+					if (name === 'Connected' && val) {
+						if (self.pairModeAdapter && device.Adapter === self.pairModeAdapter.path) {
+							PairingAgent.removeAllListeners('device_trusted');
+							console.log('[Bluez.js] device_trusted event handler removed');
+							setTimeout(function() {
+								setAdapterProperty(self, [device.Adapter], 'Discoverable', false);
+							}, 5000);
+						}
+					}
+				});
+			});
+			console.log('[Bluez.js] device added: ' + JSON.stringify(device));
+			if (onAdded) onAdded();
+		});
+	}
+	
+	var addSignalHandlers = function(onComplete) {
+		var keys = Object.keys(self.adapters);
+		var i = 0;
+		var nextAdapter = function() {
+			if (i < keys.length) {
+				i++;
+				return self.adapters[keys[i-1]];
+			}
+			return null;
+		}
+		var addPropertiesChangedHandler = function() {
+			var adapter = nextAdapter();
+			if (adapter) {
+				removeAllHandlersForSignal('org.bluez', adapter.path, 'org.freedesktop.DBus.Properties', 'PropertiesChanged', function() {
+					addSignalHandler('org.bluez', adapter.path, 'org.freedesktop.DBus.Properties', 'PropertiesChanged', function(ifaceName, props) {
+						Object.keys(props).forEach(function(name) {
+							var val = props[name];
+							adapter[name] = val;
+							console.log('[Bluez.Adapter] PropertyChanged: ' + adapter.path + ', ' + name + '=' + val);
+							if (name === 'Discoverable') {
+								if (!val) {
+									self.pairModeAdapter = null;
+									self.emit('pairing_mode_timeout');
+								}
+								if (val) {
+									self.pairModeAdapter = adapter;
+								}
+							}
+							if (name === 'Class' && val === 0) {
+								return; // the adapter has been shutdown
+							}
+							if (name === 'Class' && val !== 2360324) {
+								setAdapterClass(self, [adapter.path], '0x240404');
+							}
+						});
+					}, addPropertiesChangedHandler);
+				});
+			} else {
+				if (onComplete) onComplete();
+			}
+		}
+		addPropertiesChangedHandler();
+	}
+	
+	var onManagedObjects = function(mo) {
+		Object.keys(mo).forEach(function(key) {
+			if (key.startsWith('/org/bluez')) {
+				if (mo[key]['org.bluez.Adapter1']) {				
+					var adapter = mo[key]['org.bluez.Adapter1'];
+					adapter.path = key;
+					if (!self.adapters[key]) {
+						adapter.devices = [];
+					} else {
+						self.adapter.devices = self.adapters[key].devices.slice();
+					}
+					self.adapters[key] = adapter;
+				}
+				if (mo[key]['org.bluez.Device1']) {
+					var device = mo[key]['org.bluez.Device1'];
+					device.path = key;
+					if (device.Trusted) addDevice(device);
+				}
+			}
+		});
+		addSignalHandlers(function() {
+			self.powerOnAdapters(function() {
+				console.log('all bluetooth adapters are now powered on');
+				configureAdapter(self, Object.keys(self.adapters), adapterConfig, function() {
+					console.log('all bluetooth adapters are configured');
+					PairingAgent.stop(function() {
+						PairingAgent.start(function() {
+							console.log('pairing agent started');
+							SerialPortProfile.stop(function() {
+								SerialPortProfile.start(function() {
+									console.log('serialport profile started');
+									self.emit('ready', self.adapters);
+								});
+							});
+						});
+					});
+					//console.log('---------------------------------------------');
+					//console.log(self.adapters);
+					//console.log('---------------------------------------------');
+				});
+			});
+		});
+	}
+
+	self.powerOnAdapters = function(onComplete) {
+		setAdapterProperty(self, Object.keys(self.adapters), 'Powered', true, onComplete);
+	}
+
+	self.powerOffAdapters = function(onComplete) {
+		setAdapterProperty(self, Object.keys(self.adapters), 'Powered', false, onComplete);
+	}
+
+	self.resetAdapters = function(onComplete) {
+		//ProcessManager.killOfono(function(){
+			resetAdapter(self, Object.keys(self.adapters), function() {
+				ProcessManager.reset(onComplete);
+			});
+		//});
+	}
+	
+	var pairStarting = false;
+	
+	self.pair = function(onComplete) {
+		var adapter = findAvailableAdapter(self);
+		if (!adapter) {
+			if (onComplete) onComplete('no available adapter');
+			return;
+		}
+		if (self.pairModeAdapter || pairStarting) {
+			if (onComplete) onComplete('pairing already on');
+			return;
+		}
+		pairStarting = true;
+		// extra safe code to reset the pairStarting
+		setTimeout(function() {
+			pairStarting = false;
+		}, 2000); // it should never take more than 2 seconds.
+		setAdapterProperty(self, [adapter.path], 'Discoverable', true, function() {
+			pairStarting = false;
+			PairingAgent.once('device_trusted', function(path) {
+				getDevice(path, function(err, device) {
+					if (notErr(err)) {
+						device.path = path;
+						addDevice(device, function() {
+							setTimeout(function() {
+								setAdapterProperty(self, [device.Adapter], 'Discoverable', false);
+							}, 8000);
+						});
+					}
+				});
+			});
+			console.log('[Bluez.js] device_trusted event handler registered');
+			if (onComplete) onComplete();
+		});
+	}
+	
+	var onBluezDbusOnline = function(managedObjects) {
+		self.pairModeAdapter = null;
+		self.adapters = {};
+		var addInterfacesAddedHandler = function(onComplete) {
+			removeAllHandlersForSignal('org.bluez', '/', 'org.freedesktop.DBus.ObjectManager', 'InterfacesAdded', function() {
+				addSignalHandler('org.bluez', '/', 'org.freedesktop.DBus.ObjectManager', 'InterfacesAdded', function(path, ifaces) {
+					console.log('[Bluez.DBus] InterfacesAdded: ' + path);
+					console.log(ifaces);
+					console.log();
+					if (ifaces['org.bluez.Device1']) {
+						var device = ifaces['org.bluez.Device1'];
+						device.path = path;
+						if (device.Trusted) {
+							addDevice(device);
+						}
+					}
+				}, onComplete);
+			});
+		}
+		var addInterfacesRemovedHandler = function() {
+			removeAllHandlersForSignal('org.bluez', '/', 'org.freedesktop.DBus.ObjectManager', 'InterfacesRemoved', function() {
+				addSignalHandler('org.bluez', '/', 'org.freedesktop.DBus.ObjectManager', 'InterfacesRemoved', function(path, ifaces) {
+					console.log('[Bluez.DBus] InterfacesRemoved: ' + path);
+					console.log(ifaces);
+					console.log();
+				}, function() {
+					onManagedObjects(managedObjects);
+				});
+			});
+		}
+		addInterfacesAddedHandler(addInterfacesRemovedHandler);
+	}
+	
+	ProcessManager.on('bluez_online', onBluezDbusOnline);
+	
+	ProcessManager.on('pulse_online', function(sensory) {
+		//pulse needs to be online to say when a device is connected
+		//otherwise its a race condition
+		tryConnectDevices(self, Object.keys(self.adapters));
+	});
+}
+
+function setAdapterClass(self, adapterKeys, clazz) {
+	for (var i=0; i<adapterKeys.length; i++) {
+		var adapter = self.adapters[adapterKeys[i]];
+		var hciN = adapter.path.replace('/org/bluez/', '');
+		var cmd = 'hciconfig ' + hciN + ' class ' + clazz;
+		console.log('execSync: ' + cmd);
+		execSync(cmd);
+	}
+}
+
+function findAvailableAdapter(self) {
+	var keys = Object.keys(self.adapters);
+	for (var i=0; i<keys.length; i++) {
+		if (self.adapters[keys[i]].devices.length === 0) {
+			return self.adapters[keys[i]];
+		}
+		var devices = self.adapters[keys[i]].devices;
+		var allDevicesOffline = true;
+		for (var j=0; j<devices.length; j++) {
+			if (devices[j].Connected) allDevicesOffline = false;
+		}
+		if (allDevicesOffline) return self.adapters[keys[i]];
+	}
+	return null;
+}
+
+function resetAdapter(self, adapterKeys, onComplete) {
+	var i = 0;
+	var nextAdapter = function() {
+		if (i < adapterKeys.length) {
+			i++;  
+			return self.adapters[adapterKeys[i-1]];
+		}
+		return null;
+	}
+	var reset = function() {
+		var adapter = nextAdapter();
+		if (adapter) {
+			removeAllHandlersForSignal('org.bluez', adapter.path, 'org.freedesktop.DBus.Properties', 'PropertiesChanged', function() {
+				removeDevices(adapter, reset);
+			});
+		} else {
+			configureAdapter(self, adapterKeys, adapterConfig, function() {
+				self.pairModeAdapter = null;
+				if (onComplete) onComplete();
+			});
+		}
+	}
+	reset();
+}
+
+function configureAdapter(self, adapterKeys, options, onComplete) {
+	var optionKeys = Object.keys(options);
+	var i = 0;
+	var nextOption = function() {
+		if (i < optionKeys.length) {
+			i++;  
+			return {name: optionKeys[i-1], val: options[optionKeys[i-1]]};
+		}
+		return null;
+	}
+	var config = function() {
+		var option = nextOption();
+		if (option) {
+			setAdapterProperty(self, adapterKeys, option.name, option.val, config);
+		} else {
+			if (onComplete) onComplete();
+		}
+	}
+	config();
+}
+
+function setAdapterProperty(self, adapterKeys, name, val, onComplete) {
+	var i = 0;
+	var nextAdapter = function() {
+		if (i < adapterKeys.length) {
+			i++;  
+			return self.adapters[adapterKeys[i-1]];
+		}
+		return null;
+	}
+	var setProperty = function() {
+		var adapter = nextAdapter();
+		if (adapter) {
+			bus.getInterface('org.bluez', adapter.path, 'org.bluez.Adapter1', function(err, iface) {
+				if (notErr(err)) {
+					iface.setProperty(name, val, setProperty);
+				}
+			});
+		} else {
+			if (onComplete) onComplete();
+		}
+	}
+	setProperty();
+}
+
+function removeDevices(adapter, onComplete) {
+	var nextDevice = function() {
+		if (adapter.devices.length > 0) {
+			return adapter.devices[0];
+		}
+		return null;
+	}
+	var remove = function() {
+		var device = nextDevice();
+		if (device) {
+			console.log('removing device: ' + device.path);
+			removeDevice(adapter, device, function() {
+				removeAllHandlersForSignal('org.bluez', device.path, 'org.freedesktop.DBus.Properties', 'PropertiesChanged', remove);
+			});
+		} else {
+			if (onComplete) onComplete();
+		}
+	}
+	remove();
+}
+
+function removeDevice(adapter, device, onComplete) {
+	var remove = function() {
+		for (var i=0; i<adapter.devices.length; i++) {
+			if (adapter.devices[i].path === device.path) {
+				adapter.devices.splice(i, 1); //remove device
+				console.log('removed device: ' + device.path);
+				break;
+			}
+		}
+	}
+	PairingAgent.setDeviceTrusted(device.path, false, function() {
+		bus.getInterface('org.bluez', adapter.path, 'org.bluez.Adapter1', function(err, iface) {
+			if (notErr(err)) {
+				iface.RemoveDevice['timeout'] = 2000;
+				iface.RemoveDevice['finish'] = function() {
+					remove();
+					if (onComplete) onComplete();
+				};
+				iface.RemoveDevice['error'] = function(err) {
+					console.log('[error] remove device(' + device.path + ') - ' + err);
+					remove();
+					if (onComplete) onComplete();
+				};
+				iface.RemoveDevice(device.path);
+			}
+		});
+	});
+}
+
+function tryConnectDevices(self, adapterKeys, onComplete) {
+	var i = 0;
+	var nextAdapter = function() {
+		if (i < adapterKeys.length) {
+			i++;
+			return self.adapters[adapterKeys[i-1]];
+		}
+		return null;
+	}
+	var tryConnect = function() {
+		var adapter = nextAdapter();
+		if (adapter) {
+			tryConnectDevice(adapter, tryConnect);
+		} else {
+			if (onComplete) onComplete();
+		}
+	}
+	tryConnect();
+}
+
+function tryConnectDevice(adapter, onComplete) {
+	var i = 0;
+	var nextDevice = function() {
+		if (i < adapter.devices.length) {
+			i++;  
+			return adapter.devices[i-1];
+		}
+		return null;
+	}
+	var tryConnect = function() {
+		var device = nextDevice();
+		if (device) {
+			connectDevice(device, function(err) {
+				if (err) {
+					//not connected, try next device.
+					tryConnect();
+				} else {
+					//connected
+					if (onComplete) onComplete();
+				}
+			});
+		} else {
+			if (onComplete) onComplete();
+		}
+	}
+	tryConnect();
+}
+
+function disconnectDevice(device, onComplete) {
+	bus.getInterface('org.bluez', device.path, 'org.bluez.Device1', function(err, iface) {
+		if (notErr(err)) {
+			iface.Disconnect['timeout'] = 2000;
+			iface.Disconnect['finish'] = function() {
+				if (onComplete) onComplete.apply(null, [null]);
+			};
+			iface.Disconnect['error'] = function(err) {
+				console.log('[error] disconnect device(' + device.path + ') - ' + err);
+				if (onComplete) onComplete(err);
+			};
+			iface.Disconnect();
+		}
+	});
+}
+
+function connectDevice(device, onComplete) {
+	bus.getInterface('org.bluez', device.path, 'org.bluez.Device1', function(err, iface) {
+		if (notErr(err)) {
+			iface.Connect['timeout'] = 2000;
+			iface.Connect['finish'] = function() {
+				if (onComplete) onComplete.apply(null, [null]);
+			};
+			iface.Connect['error'] = function(err) {
+				console.log('[error] connect device(' + device.path + ') - ' + err);
+				if (onComplete) onComplete(err);
+			};
+			iface.Connect();
+		}
+	});
+}
+
+function getDevice(path, onComplete) {
+	bus.getInterface('org.bluez', path, 'org.bluez.Device1', function(err, iface) {
+		if (notErr(err)) {
+			iface.getProperties(onComplete);
+		}
+	});
+}
