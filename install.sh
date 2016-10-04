@@ -12,6 +12,16 @@ function tst {
 
 #tst sudo apt-get install libttspico-utils
 
+##### ALEXA-START
+tst sudo apt-get install openssl sox -y
+
+tst cd ~/speakspoke/alexa/client
+tst /bin/bash generate.sh my_device 123456
+
+tst cd ~/speakspoke/alexa/companionService
+tst npm install
+##### ALEXA-END
+
 tst cd ~/speakspoke/sensory/Samples
 tst make
 

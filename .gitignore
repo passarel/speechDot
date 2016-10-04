@@ -1,0 +1,7 @@
+*~
+
+alexa/client/certs
+alexa/client/resp.mp3
+alexa/client/ask.wav
+
+node_modules/

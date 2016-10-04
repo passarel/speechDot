@@ -27,6 +27,11 @@ rm -rf /home/pi/logs/*.log
 #python /home/pi/speakspoke/python_scripts/simple-agent.py &> /home/pi/logs/pairing.log &
 #echo "Started bluetooth pairing agent"
 
+##### ALEXA-START
+node /home/pi/speakspoke/alexa/companionService/bin/www &> /home/pi/logs/alexa-compService.log &
+echo "Alexa companion service started"
+##### ALEXA-END
+
 node /home/pi/speakspoke/app.js &> /home/pi/logs/speakspoke.log &
 echo "Speakspoke app spawned"
 

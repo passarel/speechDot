@@ -76,8 +76,8 @@ int main(int argc, char **argv)
 	recog_t *r_trig = NULL;
 	pronuns_t *pp_trig = NULL;
 	searchs_t *s_trig = NULL;
-	unsigned short trigCount = 4;
-	const char *trigs[] = { "Ok Google", "Hey Seary", "Jessina", "Hey Kor tana" };
+	const char *trigs[] = { "Ok Google", "Hey Seary", "Jessina", "Hey Kor tana", "Alexa" };
+	unsigned short trigCount = sizeof(trigs) / sizeof(trigs[0]);
 
 	recog_t *r_cmd = NULL;
 	pronuns_t *pp_cmd = NULL;
@@ -261,7 +261,8 @@ int main(int argc, char **argv)
 			continue;
 		}
 
-		if (strcmp(str, "Hey Seary") == 0 || strcmp(str, "Ok Google") == 0 || strcmp(str, "Hey Kor tana") == 0) {
+		if (strcmp(str, "Hey Seary") == 0 || strcmp(str, "Ok Google") == 0 || strcmp(str, "Hey Kor tana") == 0 ||
+			strcmp(str, "Alexa") == 0) {
 			disp(cons, str);
 		    continue;
 		}

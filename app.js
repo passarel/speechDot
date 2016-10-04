@@ -9,6 +9,8 @@ const audio_responses_path = path.resolve(__dirname, 'audio_responses');
 const bash_scripts_path = path.resolve(__dirname, 'bash_scripts');
 const ProcessManager = require('./src/ProcessManager.js');
 
+var AlexaAvs = require('./alexa/client/AlexaAvs.js');
+
 var activeModem = null;
 var incomingCall = null;
 var activeCall = null;
@@ -131,6 +133,11 @@ function onSensoryData(data) {
  		console.log('onHeyCortana');
  		onHeyCortana();
     }
+
+        if (_data == 'Alexa') {
+                console.log('onAlexa');
+                onAlexa();
+        }
  	
  	// im doing this because jessina pair will can be recognized when u say jessina answer
  	if (incomingCall && (_data === 'Jessina Dismiss')) {
@@ -280,6 +287,11 @@ function onHeyCortana() {
 			tryAcquireVoiceRecognition(modem);
 		}
 	});
+}
+
+function onAlexa() {
+	AlexaAvs.requestRegCode(AlexaAvs);
+	AlexaAvs.sendRequestToAVS(AlexaAvs);
 }
 
 function playAudioResponseAsync(fileName, onComplete) {
