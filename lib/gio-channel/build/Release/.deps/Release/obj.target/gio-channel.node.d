@@ -1,1 +1,0 @@
-cmd_Release/obj.target/gio-channel.node := g++ -shared -pthread -rdynamic  -Wl,-soname=gio-channel.node -o Release/obj.target/gio-channel.node -Wl,--start-group Release/obj.target/gio-channel/src/gio_channel.o -Wl,--end-group -lglib-2.0
