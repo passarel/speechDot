@@ -1,4 +1,4 @@
-var config = require('./alexa/client/config');
+var config = require('./config.js');
 var https = require('https');
 var http = require('http');
 var request = require('request');

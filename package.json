@@ -4,6 +4,7 @@
     "play-sound": "0.0.9",
     "socket.io": "*",
     "socket.io-client": "*",
-    "wav": "*"
+    "wav": "*",
+    "request": "*"
   }
 }

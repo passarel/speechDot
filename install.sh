@@ -4,7 +4,7 @@
 function tst {
     echo "===> Executing: $*"
     if ! $*; then
-        echo "Exiting scrip due to error from: $*"
+        echo "Exiting script due to error from: $*"
         exit 1
     fi
 }
@@ -15,17 +15,20 @@ function tst {
 ##### ALEXA-START
 tst sudo apt-get install openssl sox -y
 
-tst cd ~/speakspoke/alexa/client
+tst cd ~/speechdot/alexa/client
 tst /bin/bash generate.sh my_device 123456
 
-tst cd ~/speakspoke/alexa/companionService
+tst cd ~/speechdot/alexa/companionService
 tst npm install
 ##### ALEXA-END
 
-tst cd ~/speakspoke/sensory/Samples
+tst cd ~/speechdot/sensory/Samples
 tst make
 
-tst cd ~/speakspoke
+tst cd ~/speechdot/lib/fcntl
+tst npm install
+
+tst cd ~/speechdot
 tst npm install
 
 tst sudo rm -rf /etc/asound.conf
