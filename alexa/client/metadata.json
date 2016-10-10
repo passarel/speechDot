@@ -1,17 +1,5 @@
 {
-    "messageHeader": {
-        "deviceContext": [
-            {
-                "name": "playbackState",
-                "namespace": "AudioPlayer",
-                "payload": {
-                    "streamId": "",
-                    "offsetInMilliseconds": "0",
-                    "playerActivity": "IDLE"
-                }
-            }
-        ]
-    },
+    "messageHeader": {},
     "messageBody": {
 	"profile": "alexa-close-talk",
 	"locale": "en-us",

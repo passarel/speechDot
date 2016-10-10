@@ -120,6 +120,10 @@ function onSensoryData(data) {
 	if (!isReady) return;
     var _data = data.toString().trim();
     console.log('sensory -> ' + _data);
+
+    if (AlexaAvs.processingRequest === true) {
+            return;
+    }
    
     if (_data === 'ok_google') {
  	    console.log('onOkGoogle');

@@ -1,7 +1,6 @@
 var config = require('./config.js');
 var https = require('https');
 var http = require('http');
-var request = require('request');
 var fs = require('fs');
 var player = require('play-sound')(opts = {});
 
@@ -11,9 +10,10 @@ const EventEmitter = require('events').EventEmitter;
 const util = require('util');
 util.inherits(AlexaAvs, EventEmitter);
 
-const certs_path = require('path').resolve(__dirname, './alexa/client/certs');
-const audio_ask_file = require('path').resolve(__dirname, './alexa/client/ask.wav');
-const audio_resp_file = require('path').resolve(__dirname, './alexa/client/resp.mp3');
+const certs_path = require('path').resolve(__dirname, './certs');
+const metadata_file = require('path').resolve(__dirname, './metadata.json');
+const audio_ask_file = require('path').resolve(__dirname, './ask.wav');
+const audio_resp_file = require('path').resolve(__dirname, './resp.mp3');
 
 module.exports = new AlexaAvs();
 
@@ -24,8 +24,7 @@ function AlexaAvs() {
     self.sessionId = null;
     self.accessToken = null;
     self.doSendRequest = false;
-    self.isRecording = false;
-    self.isPlaying = false;
+    self.processingRequest = false;
     self.atokenRefresher = null;
 
     self.requestRegCode = requestRegCode;
@@ -169,6 +168,7 @@ function playAudioResponse(self, data) {
 	console.log('unable to parse response: ');
 	console.log(s);
 	console.log('end of response');
+	self.processingRequest = false;
 	return;
     }
 
@@ -176,6 +176,7 @@ function playAudioResponse(self, data) {
     i = s.indexOf('\r\n', i);
     if (i <= -1) {
 	console.log('it seems to be an invalid response :-(');
+	self.processingRequest = false;
 	return;
     }
 
@@ -189,20 +190,18 @@ function playAudioResponse(self, data) {
     stream.on('finish', function () {
 	console.log('saved audio resp file to underlying fs');
 	console.log('*** PLAYING RESPONSE ***');
-	self.isPlaying = true;
 	var play = player.play(audio_resp_file, function (err) {
 	    if (err) {
 		throw err;
 	    }
 	    console.log('*** END OF RESPONSE ***');
-	    self.isPlaying = false;
 	});
+	self.processingRequest = false;
     });
 }
 
 function startRecording(self) {
     console.log('*** RECORDING ***');
-    self.isRecording = true;
     const child = spawn('rec',
 			[
 			    audio_ask_file,
@@ -211,7 +210,6 @@ function startRecording(self) {
 			]);
 
     child.on('close', function (c) {
-	self.isRecording = false;
 	console.log('*** END OF RECORDING ***');
 	console.log('saved recorded audio in ' + audio_ask_file);
 	self.emit('audio_rec_ready', self);
@@ -224,22 +222,29 @@ function onAudioRecReady(self) {
 
     const child = spawn('curl',
 			['-i',
+			 //'-v',
 			 '-H',
 			 'Expect:',
 			 '-H',
 			 'Authorization: Bearer ' + self.accessToken,
 			 '-F',
-			 '"metadata=<alexa/client/metadata.json;type=application/json; charset=UTF-8"',
+			 '"metadata=@' + metadata_file + ';type=application/json;charset=UTF-8"',
 			 '-F',
-			 '"audio=<alexa/client/ask.wav;type=audio/L16; rate=16000; channels=1"',
+			 '"audio=@' + audio_ask_file + ';type=audio/L16;rate=16000;channels=1"',
 			 reqUrl
 			]);
 
     var buffer = new Buffer('');
 
+    /*
+    * var curlLog = fs.createWriteStream('/tmp/.__curl.log');
+    * child.stderr.pipe(curlLog);
+    */
+
     child.stdout.on('data', function (data) {
 	buffer = Buffer.concat([buffer, data]);
     });
+    
     child.on('close', function (c) {
 	console.log('*** request sent ***');
 	console.log('code: ' + c);
@@ -256,5 +261,6 @@ function onAccessTokenReady(self) {
     console.log('set doSendRequest to FALSE');
     self.doSendRequest = false;
 
+    self.processingRequest = true;
     startRecording(self);
 }
