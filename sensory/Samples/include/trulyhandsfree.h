@@ -1,7 +1,7 @@
 /*
  * Sensory Confidential
  *
- * Copyright (C)2000-2015 Sensory Inc.
+ * Copyright (C)2000-2016 Sensory Inc.
  * http://www.sensory.com/
  *
  *---------------------------------------------------------------------------
@@ -17,12 +17,12 @@ extern "C" {
 #include <time.h>
 
 #define THF_NAME         "TrulyHandsfree"
-#define THF_VERSION      "4.0.6"
+#define THF_VERSION      "4.4.3"
 #define THF_VERSION_MAJOR 4
-#define THF_VERSION_MINOR 0
-#define THF_VERSION_PATCH 6
+#define THF_VERSION_MINOR 4
+#define THF_VERSION_PATCH 3
 #define THF_VERSION_PRE  ""
-#define THF_VERSION_ID    76
+#define THF_VERSION_ID    99
 
 #define _QUOTE(s) #s
 #define QUOTE(s) _QUOTE(s)
@@ -53,8 +53,8 @@ typedef enum {
   REC_LSILENCE, REC_TSILENCE, REC_MAXREC, REC_MINDUR, REC_ESILENCET,
   REC_ESPEECHT, REC_SHORTTERMMS, REC_LONGTERMMS,
   REC_BACKOFF, REC_THI, REC_SDET_EDIFF, REC_SDET_INITIAL_DELAY,
-  REC_SDET_STEM, REC_SDET_LTEM,
-  REC_KEEP_SDET_HISTORY, REC_KEEP_FEATURE_HISTORY, REC_KEEP_FEATURES,
+  REC_SDET_STEM, REC_SDET_LTEM, REC_SDET_MODE, REC_KEEP_SDET_HISTORY,
+  REC_KEEP_FEATURE_HISTORY, REC_KEEP_FEATURES,
   REC_EPQ_ENABLE, REC_EPQ_MIN, REC_EPQ_SCORE, REC_EPQ_NOISE,
   REC_SV_ADJUST_METHOD,
   REC_SV_ADJUST1, REC_SV_ADJUST2, REC_SV_ADJUST3, REC_SV_ADJUST4,
@@ -66,9 +66,14 @@ typedef enum {
   REC_CHECK_SIL_END_MSEC, REC_CHECK_SNR, REC_CHECK_RECORDING_VARIANCE,
   REC_CHECK_CLIPPING_PERCENT, REC_CHECK_CLIPPING_MSEC,
   REC_CHECK_POOR_RECORDINGS,
-  REC_CHECK_SPOT, REC_CHECK_VOWEL_DUR, 
-  REC_EARLYSTOP_NBEST
+  REC_CHECK_SPOT, REC_CHECK_VOWEL_DUR,
+  REC_EARLYSTOP_NBEST,
+  REC_FEATURE_AGC
 } thfRecogConfig_t;
+
+typedef enum {
+  REC_SDET_MODE_TRIGGER_COMMAND, REC_SDET_MODE_COMMAND, REC_SDET_MODE_ENROLL
+} thfRecogSdetModeConfig_t;
 
 #define REC_EPQ_MINSNR REC_EPQ_MIN
 
@@ -258,6 +263,7 @@ typedef struct tts_t_ tts_t;
 typedef struct udt_t_ udt_t;
 typedef enum thfSearchConfigEnum thfSearchConfig_t;
 typedef struct phsearch_t_ phsearch_t;
+typedef struct adaptObj_t_ adaptObj_t;
 #endif
 
 /* static wave structure [output] */
@@ -305,6 +311,134 @@ typedef struct thfUser_s {
   char *reserved2; /* set to NULL */
 } thfUser_t;
 
+/*-- Adapt structures ---*/
+
+#define ADAPT_UNSPECIFIED_ID -32768
+
+/* structure for adapt task information */
+
+typedef struct thfAdaptTaskInfo_s {
+  char *taskID;
+  char *taskLanguage;
+  char *taskVersion;
+  int   userDefinedTrigger;
+  int   featureType;
+  int   sampleRate;
+  int   frameSize;
+  int   saveEnrollmentAudio;
+  int   numEnrollments;
+  int   numEnrollmentsWithContext;
+  int   delay1;
+  int   delayM;
+  float epqMin;
+  float svThresh;
+  int   paramAoffset;
+  int   doSpeechDetect;
+  int   contextPostprocess;
+  float checkPhraseQuality;
+  float checkEnergyMin;
+  float checkEnergyStdDev;
+  float checkSilBegMsec;
+  float checkSilEndMsec;
+  float checkSNR;
+  float checkRecordingVariance;
+  float checkPoorRecordingsLimit;
+  float checkClippingFrames;
+  float checkVowelDur;
+  float checkRepetition;
+  float checkSilInPhrase;
+  float checkSpot;
+} thfAdaptTaskInfo_t;
+
+/* structures for adapt user and enrollment information */
+
+typedef struct thfAdaptEnrollInfo_s {
+  long    ID;
+  int     used;
+  long    score;
+  time_t  time;
+  long    phraseBeginTime;
+  long    phraseEndTime;
+  long    audioLen;
+  short  *audio;
+} thfAdaptEnrollInfo_t;
+
+typedef struct thfAdaptUser_s {
+  char  *name;
+  int    numEnroll;
+  thfAdaptEnrollInfo_t *enrollInfo;
+} thfAdaptUser_t;
+
+typedef struct thfAdaptUserInfo_s {
+  int    numUsers;
+  thfAdaptUser_t *user;
+} thfAdaptUserInfo_t;
+
+/* structure for one enrollment recording with 'adapt' functions */
+
+typedef struct thfTriggerEnrollment_s {
+  long   sampFreq;
+  short *audio;
+  unsigned long audioLen;
+  long   score;
+  time_t time;
+  long   enrollmentID;
+  char  *reserved1;     /* set to NULL */
+  char  *reserved2;     /* set to NULL */
+  char  *transcription; /* set to NULL */
+  char  *context;       /* set to NULL unless have enrollment in context */
+} thfTriggerEnrollment_t;
+
+/* constants and structures for checking 'adapt' enrollments */
+
+typedef enum {CHECK_TRIGGER_ENERGY_MIN,
+              CHECK_TRIGGER_ENERGY_STD_DEV,
+              CHECK_TRIGGER_SIL_BEG_MSEC,
+              CHECK_TRIGGER_SIL_END_MSEC,
+              CHECK_TRIGGER_SNR,
+              CHECK_TRIGGER_RECORDING_VARIANCE,
+              CHECK_TRIGGER_POOR_RECORDINGS_LIMIT,
+              CHECK_TRIGGER_CLIPPING_FRAMES,
+              CHECK_TRIGGER_VOWEL_DUR,
+              CHECK_TRIGGER_REPETITION,
+              CHECK_TRIGGER_SIL_IN_PHRASE,
+              CHECK_TRIGGER_SPOT,
+              } thfTriggerEnrollmentCheckTypes_t;
+
+typedef struct thfEnrollmentCheckOne_s {
+  long   enrollmentID;
+  int    numChecks;
+  int   *pass;
+  float *score;
+  float *thresh;
+} thfEnrollmentCheckOne_t;
+
+typedef struct thfEnrollmentCheck_s {
+  int    allPass;
+  float  quality;
+  float  qualityThresh;
+  int    numEnroll;
+  thfEnrollmentCheckOne_t *enroll;
+} thfEnrollmentCheck_t;
+
+/* constants and structure for models created by adaptation */
+
+typedef enum {TRIGGER_ENROLL_DELAY,
+              TRIGGER_ENROLL_EPQ_MIN,
+              TRIGGER_ENROLL_SV_THRESH,
+              } thfTriggerEnrollParams_t;
+
+typedef struct thfModelTrigger_s {
+  char      *taskName;
+  int        numUsers;
+  float     *spotParams;
+  int        numSpotParams;
+  recog_t   *recog;
+  searchs_t *search;
+} thfModelTrigger_t;
+
+/*-----*/
+
 /* read-from-stream function type */
 typedef enum {
   THF_STREAM_OK, THF_STREAM_EOF, THF_STREAM_ERROR
@@ -326,7 +460,7 @@ typedef size_t (*thfReadFunc_t)(void *buffer, size_t size, size_t nitems,
 #endif
 
 /* Functions marked with THF_EXPERIMENTAL are in a state of flux.
- * Do not use tehse unless explicilty recommended by Sensory tech support.
+ * Do not use these unless explicilty recommended by Sensory tech support.
  */
 #define THF_EXPERIMENTAL(a,b,c) THF_PROTOTYPE(a,b,c)
 
@@ -382,6 +516,8 @@ THF_PROTOTYPE(searchs_t *,thfSearchCreateIncremental,(thf_t *thf, recog_t *r, se
 THF_PROTOTYPE(searchs_t *,thfSearchCreateFromGrammar,(thf_t *thf, recog_t *r, pronuns_t *p, const char *grammar, const char **word, const char **pronun, unsigned short count, unsigned short nbest, char usePhrasespotting));
 THF_PROTOTYPE(int, thfSearchPhrases,(thf_t *thf, searchs_t *s,
                                      char ***map, int *count));
+THF_PROTOTYPE(int, thfNnsvIdxToWordID,(thf_t *thf, searchs_t *s, recog_t *r,
+                                       int nnsvIdx));
 THF_PROTOTYPE(int ,thfSearchSaveToFile,(thf_t *thf, searchs_t *s, const char *filename));
 THF_PROTOTYPE(int ,thfSaveEmbedded,(thf_t *thf, recog_t *r, searchs_t *s,
                                     const char *target, char *rfilename,
@@ -416,6 +552,7 @@ THF_PROTOTYPE(int,thfRecogCreateHybrid,(thf_t *thf, recog_t **r, pronuns_t **p, 
 THF_PROTOTYPE(int,thfRecogSdetForceDone,(thf_t *thf, recog_t *r));
 THF_PROTOTYPE(int,thfRecogPrep,(thf_t *thf, recog_t *r, unsigned long ilen, short *ibuf));
 THF_PROTOTYPE(int,thfRecogPrepSeq,(thf_t *thf, recog_t *dst, recog_t *src));
+THF_PROTOTYPE(int,thfRecogDowngradeToCnn,(thf_t *thf, recog_t *r));
 
 
 /* Speaker Verification functions */
@@ -500,6 +637,73 @@ THF_PROTOTYPE(int,thfUdtCacheSaveToFile,(thf_t *thf, udt_t *udt, const char *cac
 THF_PROTOTYPE(int,thfUdtCacheLoadFromFile,(thf_t *thf, thfUser_t *user, unsigned short numUsers, udt_t *udt, const char *cacheFilename));
 THF_PROTOTYPE(void,thfUdtDestroy,(udt_t *udt));
 
+/* adaptation (UDT and EFT trigger) functions */
+THF_PROTOTYPE(adaptObj_t *,thfAdaptCreate,(thf_t *thf));
+THF_PROTOTYPE(int,thfAdaptDestroy,(thf_t *thf, adaptObj_t *aObj));
+THF_PROTOTYPE(int,thfAdaptTaskCreate,(thf_t *thf, adaptObj_t *aObj, 
+              char *taskTypeName, char *taskDataFileName, char *taskName));
+THF_PROTOTYPE(int,thfAdaptTaskGet,(thf_t *thf, adaptObj_t *aObj, 
+              char *taskName, char *paramName, float *value));
+THF_PROTOTYPE(int,thfAdaptTaskSet,(thf_t *thf, adaptObj_t *aObj, 
+              char *taskName, char *paramName, float value));
+THF_PROTOTYPE(int,thfAdaptTaskInfo,(thf_t *thf, adaptObj_t *aObj, 
+              char *taskName, thfAdaptTaskInfo_t **taskInfoOut));
+THF_PROTOTYPE(int,thfAdaptTaskInfoDestroy,(thf_t *thf, adaptObj_t *aObj, 
+              char *taskName, thfAdaptTaskInfo_t *taskInfo));
+THF_PROTOTYPE(int,thfAdaptTaskParamsSaveToFile,(thf_t *thf, adaptObj_t *aObj, 
+              char *taskName, char *fileName));
+THF_PROTOTYPE(int,thfAdaptTaskParamsReadFromFile,(thf_t *thf, adaptObj_t *aObj, 
+              char *taskName, char *fileName));
+THF_PROTOTYPE(int,thfAdaptTaskDestroy,(thf_t *thf, adaptObj_t *aObj, 
+              char *taskName));
+THF_PROTOTYPE(int,thfAdaptUserAdd,(thf_t *thf, adaptObj_t *aObj, 
+              char *taskName, char *userName));
+THF_PROTOTYPE(int,thfAdaptUserSaveToFile,(thf_t *thf, adaptObj_t *aObj, 
+              char *taskName, char *userName, char *fileName));
+THF_PROTOTYPE(int,thfAdaptUserReadFromFile,(thf_t *thf, adaptObj_t *aObj, 
+              char *taskName, char *fileName));
+THF_PROTOTYPE(int,thfAdaptUserDestroy,(thf_t *thf, adaptObj_t *aObj, 
+              char *taskName, char *userName));
+THF_PROTOTYPE(int,thfAdaptUserForget,(thf_t *thf, adaptObj_t *aObj, 
+              char *taskName, char *userName));
+THF_PROTOTYPE(int,thfAdaptUserRemember,(thf_t *thf, adaptObj_t *aObj, 
+              char *taskName, char *userName));
+THF_PROTOTYPE(int,thfAdaptUserInfo,(thf_t *thf, adaptObj_t *aObj, 
+              char *taskName, thfAdaptUserInfo_t **userInfoOut));
+THF_PROTOTYPE(int,thfAdaptUserInfoDestroy,(thf_t *thf, 
+              thfAdaptUserInfo_t *userInfo));
+THF_PROTOTYPE(int,thfAdaptEnrollmentAddTrigger,(thf_t *thf, adaptObj_t *aObj, 
+              char *taskName, char *userName, 
+              thfTriggerEnrollment_t *enroll));
+THF_PROTOTYPE(int,thfAdaptEnrollmentReplaceTrigger,(thf_t *thf, 
+              adaptObj_t *aObj, char *taskName, char *userName, 
+              long enrollmentID, thfTriggerEnrollment_t *enroll));
+THF_PROTOTYPE(int,thfAdaptEnrollmentSaveToFile,(thf_t *thf, adaptObj_t *aObj, 
+              char *taskName, char *userName, long enrollmentID,
+              char *fileName));
+THF_PROTOTYPE(int,thfAdaptEnrollmentReadFromFile,(thf_t *thf, adaptObj_t *aObj, 
+              char *taskName, char *userName, char *fileName));
+THF_PROTOTYPE(int,thfAdaptEnrollmentRemove,(thf_t *thf, adaptObj_t *aObj, 
+              char *taskName, char *userName, long enrollmentID));
+THF_PROTOTYPE(int,thfAdaptEnrollmentCheck,(thf_t *thf, adaptObj_t *aObj, 
+              char *taskName, char *userName, 
+              thfEnrollmentCheck_t **enrollmentCheckResult));
+THF_PROTOTYPE(int,thfAdaptEnrollmentQuickCheck,(thf_t *thf, adaptObj_t *aObj, 
+              char *taskName, short *wav, unsigned long wavLen,
+              unsigned short sampFreq, 
+              thfEnrollmentCheck_t **enrollmentCheckResult));
+THF_PROTOTYPE(int,thfAdaptEnrollmentCheckDestroy,
+              (thf_t *thf, thfEnrollmentCheck_t *enrollmentCheckResult));
+THF_PROTOTYPE(int,thfAdaptModelAdapt,(thf_t *thf, adaptObj_t *aObj, 
+              char *taskName, char *userName, float accuracy));
+THF_PROTOTYPE(int,thfAdaptModelGetTrigger,(thf_t *thf, adaptObj_t *aObj, 
+              char *taskAndUserListIn, thfModelTrigger_t **modelTriggerOut));
+THF_PROTOTYPE(int,thfAdaptModelSaveTriggerToFile,(thf_t *thf, adaptObj_t *aObj, 
+                thfModelTrigger_t *modelTrigger,
+                char *searchFile, char *recogFile));
+THF_PROTOTYPE(int,thfAdaptModelDestroyTrigger,(thf_t *thf, 
+              thfModelTrigger_t *modelTrigger, int keepRecog, int keepSearch));
+
 /* phoneme recognition functions */
 THF_PROTOTYPE(phsearch_t *, thfPhonemeSearchCreateFromFile,(thf_t *thf,
         recog_t *r, const char *filename, unsigned short nbest));
@@ -521,7 +725,9 @@ THF_PROTOTYPE(void,thfTtsDestroy,(tts_t *tts));
 THF_PROTOTYPE(tts_t *,thfTtsCreateFromStatic,(thf_t *thf, sdata_t *global, unsigned short idx));
 THF_PROTOTYPE(int,thfTtsConfigGet,(thf_t *thf, tts_t *tts, thfTtsConfig_t key, int *value));
 THF_PROTOTYPE(int,thfTtsConfigSet,(thf_t *thf, tts_t *tts, thfTtsConfig_t key, int value));
-
+THF_PROTOTYPE(int,thfCheckAudioQuality,(thf_t *thf, recog_t *r, short *wav, unsigned long wavLen,
+                                        unsigned short sampleRate));
+  
 
 #if defined(__cplusplus)
 }
