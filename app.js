@@ -20,7 +20,7 @@ var yesNoConfirmation = null;
 var isReady = false;
 
 ProcessManager.on('sensory_online', function(sensory) {
-	setLocalSpeakerVolume(25);
+	setLocalSpeakerVolume(45);
 	setLocalMicVolume(85);
 	addOfonoHandlers();
 	sensory.stderr.on('data', onSensoryData);
@@ -121,25 +121,26 @@ function onSensoryData(data) {
     var _data = data.toString().trim();
     console.log('sensory -> ' + _data);
    
-    if (_data === 'Ok Google') {
+    if (_data === 'ok_google') {
  	    console.log('onOkGoogle');
  		onOkGoogle();
  	}
- 	if (_data === 'Hey Seary') {
+ 	if (_data === 'hey siri') {
  		console.log('onHeySiri');
  		onHeySiri();
     }
- 	if (_data === 'Hey Kor tana') {
+ 	if (_data === 'hey_cortana') {
  		console.log('onHeyCortana');
  		onHeyCortana();
     }
 
-        if (_data == 'Alexa') {
-                console.log('onAlexa');
-                onAlexa();
-        }
+ 	/*
+	if (_data == 'Alexa') {
+	        console.log('onAlexa');
+	        onAlexa();
+	}
+	*/
  	
- 	// im doing this because jessina pair will can be recognized when u say jessina answer
  	if (incomingCall && (_data === 'Jessina Dismiss')) {
  		Ofono.hangupCall(incomingCall, function() {
  			incomingCall = null;
@@ -147,7 +148,6 @@ function onSensoryData(data) {
  		return;
  	}
  	
- 	// im doing this because jessina pair will can be recognized when u say jessina answer
  	if (incomingCall && (_data === 'Jessina Answer')) {
  		Ofono.answerCall(incomingCall, function() {
  			activeCall = incomingCall;
@@ -156,7 +156,6 @@ function onSensoryData(data) {
  		return;
  	}
  	
- 	// im doing this because jessina pair will can be recognized when u say jessina hangup
  	if (activeCall && (_data === 'Jessina Hang_Up')) {
  		Ofono.hangupCall(activeCall, function() {
  			activeCall = null;

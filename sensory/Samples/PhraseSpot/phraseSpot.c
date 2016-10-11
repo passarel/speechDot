@@ -42,7 +42,7 @@
 #define PHRASESPOT_BEAM    (100.f)            /* Pruning beam */
 #define PHRASESPOT_ABSBEAM (100.f)            /* Pruning absolute beam */
 
-#define PHRASESPOT_DELAY  90                 /* Phrasespotting Delay */
+#define PHRASESPOT_DELAY  20                 /* Phrasespotting Delay */
 
 #define MAXSTR             (512)              /* Output string size */
 #define SHOWAMP            (0)                /* Display amplitude */
@@ -105,10 +105,22 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
+	const char *data_dir = "/home/pi/speechdot/sensory/Samples/PhraseSpot/data";
+
 	//----------------------------------------------------------------------------------------------------------------------------------------
 	// Create recognizers
-	disp(cons, "Loading trig recognizer: " NETFILE);
-	if (!(r_trig = thfRecogCreateFromFile(ses, THF_DATADIR NETFILE, 0xffff, 0xffff, NO_SDET)))
+	//disp(cons, "Loading trig recognizer: " NETFILE);
+	//if (!(r_trig = thfRecogCreateFromFile(ses, THF_DATADIR NETFILE, 0xffff, 0xffff, NO_SDET)))
+		//THROW("thfRecogCreateFromFile");
+
+	char acousticModelFile[200];
+	strcpy(acousticModelFile, data_dir);
+	strcat(acousticModelFile, "/");
+	strcat(acousticModelFile, "netfile.raw");
+
+	disp(cons, "Loading acoustic model... ");
+
+	if (!(r_trig = thfRecogCreateFromFile(ses, acousticModelFile, 0xffff, 0xffff, NO_SDET)))
 		THROW("thfRecogCreateFromFile");
 
 	disp(cons, "Loading cmd recognizer: " NETFILE);
@@ -131,9 +143,18 @@ int main(int argc, char **argv)
 
 	//----------------------------------------------------------------------------------------------------------------------------------------
 	// Create searches
-	disp(cons, "Compiling trig search...");
-	if (!(s_trig = thfPhrasespotCreateFromList(ses, r_trig, pp_trig, (const char**) trigs, trigCount, NULL, NULL, 0, PHRASESPOT_LISTEN_CONTINUOUS)))
-		THROW("thfPhrasespotCreateFromList");
+	//disp(cons, "Compiling trig search...");
+	//if (!(s_trig = thfPhrasespotCreateFromList(ses, r_trig, pp_trig, (const char**) trigs, trigCount, NULL, NULL, 0, PHRASESPOT_LISTEN_CONTINUOUS)))
+		//THROW("thfPhrasespotCreateFromList");
+
+	char searchFile[200];
+	strcpy(searchFile, data_dir);
+	strcat(searchFile, "/");
+	strcat(searchFile, "searchfile.raw");
+
+	disp(cons, "Creating search from file...");
+	if(!(s_trig = thfSearchCreateFromFile(ses, r_trig, searchFile, NBEST)))
+		THROW("thfSearchCreateFromFile");
 
 	disp(cons, "Compiling cmd search...");
 	if(!(s_cmd=thfSearchCreateFromList(ses, r_cmd, pp_cmd, (const char**) cmds, NULL, cmdCount, 1)))
@@ -261,7 +282,15 @@ int main(int argc, char **argv)
 			continue;
 		}
 
+		/*
 		if (strcmp(str, "Hey Seary") == 0 || strcmp(str, "Ok Google") == 0 || strcmp(str, "Hey Kor tana") == 0 ||
+			strcmp(str, "Alexa") == 0) {
+			disp(cons, str);
+		    continue;
+		}
+		*/
+
+		if (strcmp(str, "hey siri") == 0 || strcmp(str, "ok_google") == 0 || strcmp(str, "hey_cortana") == 0 ||
 			strcmp(str, "Alexa") == 0) {
 			disp(cons, str);
 		    continue;
