@@ -138,12 +138,11 @@ function onSensoryData(data) {
  		onHeyCortana();
     }
 
- 	/*
+
 	if (_data == 'Alexa') {
 	        console.log('onAlexa');
 	        onAlexa();
 	}
-	*/
  	
  	if (incomingCall && (_data === 'Jessina Dismiss')) {
  		Ofono.hangupCall(incomingCall, function() {

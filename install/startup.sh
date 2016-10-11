@@ -4,6 +4,9 @@ sudo sysctl net.ipv4.ip_default_ttl=70
 
 #rm -rf /home/pi/logs/*.log
 
+touch /home/pi/logs/alexa-compService.log
+touch /home/pi/logs/speechdot.log
+
 ##### ALEXA-START
 node /home/pi/speechdot/alexa/companionService/bin/www &> /home/pi/logs/alexa-compService.log &
 echo "Alexa companion service started"
