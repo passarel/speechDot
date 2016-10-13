@@ -228,13 +228,17 @@ function startRecording(self) {
     const child = spawn('arecord', ['-f', 'S16_LE', '-c', '1', '-r', '16000', '-t', 'raw', '--buffer-size', '512']);
     child.stdout._readableState.highWaterMark = 1024;
 
-    child.stdout.pipe(output);
-
     child.on('exit', function (c) {
+	console.log('err: ' + c);
+	if (c !== 0 && c !== 1) {
+	    throw c;
+	}
+    });
+
+    child.stdout.pipe(output).on('finish', function () {
 	console.log('*** end of recording ***');
 	execSync('aplay ' + stop_rec_file + ' 2>&1 >/dev/null');
 	self.emit('audio_rec_ready', self);
-	console.log('err: ' + c);
     });
 
     /*
@@ -242,7 +246,6 @@ function startRecording(self) {
      */
     const recordingInMillisecs = 6 * 1000;
     setTimeout(function () {
-	output.end();
 	child.kill(); /* gracefully terminate arecord by sending out SIGTERM */
     }, recordingInMillisecs);
 }
