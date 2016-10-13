@@ -13,7 +13,7 @@ function tst {
 #tst sudo apt-get install libttspico-utils
 
 ##### ALEXA-START
-tst sudo apt-get install openssl sox -y
+tst sudo apt-get install openssl -y
 
 if [ ! -d ~/speechdot/alexa/client/certs ]; then
     tst cd ~/speechdot/alexa/client
