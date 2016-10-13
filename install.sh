@@ -15,8 +15,10 @@ function tst {
 ##### ALEXA-START
 tst sudo apt-get install openssl sox -y
 
-tst cd ~/speechdot/alexa/client
-tst /bin/bash generate.sh my_device 123456
+if [ ! -d ~/speechdot/alexa/client/certs ]; then
+    tst cd ~/speechdot/alexa/client
+    tst /bin/bash generate.sh my_device 123456
+fi
 
 tst cd ~/speechdot/alexa/companionService
 tst npm install
