@@ -7,6 +7,7 @@ var lame = require('lame');
 var wav = require('wav');
 
 const spawn = require('child_process').spawn;
+const execSync = require('child_process').execSync;
 
 const EventEmitter = require('events').EventEmitter;
 const util = require('util');
@@ -17,6 +18,8 @@ const metadata_file = require('path').resolve(__dirname, './metadata.json');
 const audio_ask_file = require('path').resolve(__dirname, './ask.wav');
 const mp3_resp_file = require('path').resolve(__dirname, './resp.mp3');
 const wav_resp_file = require('path').resolve(__dirname, './resp.wav');
+const start_rec_file = require('path').resolve(__dirname, './start_recording.wav');
+const stop_rec_file = require('path').resolve(__dirname, './stop_recording.wav');
 
 module.exports = new AlexaAvs();
 
@@ -219,6 +222,8 @@ function playAudioResponse(self, data) {
 function startRecording(self) {
     console.log('*** recording ***');
 
+    execSync('aplay ' + start_rec_file + ' 2>&1 >/dev/null');
+
     var output = fs.createWriteStream(audio_ask_file);
     const child = spawn('arecord', ['-f', 'S16_LE', '-c', '1', '-r', '16000', '-t', 'raw', '--buffer-size', '512']);
     child.stdout._readableState.highWaterMark = 1024;
@@ -226,7 +231,8 @@ function startRecording(self) {
     child.stdout.pipe(output);
 
     child.on('exit', function (c) {
-	console.log('*** END OF RECORDING ***');
+	console.log('*** end of recording ***');
+	execSync('aplay ' + stop_rec_file + ' 2>&1 >/dev/null');
 	self.emit('audio_rec_ready', self);
 	console.log('err: ' + c);
     });
