@@ -3,6 +3,8 @@ var https = require('https');
 var http = require('http');
 var fs = require('fs');
 var player = require('play-sound')(opts = {});
+var lame = require('lame');
+var wav = require('wav');
 
 const spawn = require('child_process').spawn;
 
@@ -13,7 +15,8 @@ util.inherits(AlexaAvs, EventEmitter);
 const certs_path = require('path').resolve(__dirname, './certs');
 const metadata_file = require('path').resolve(__dirname, './metadata.json');
 const audio_ask_file = require('path').resolve(__dirname, './ask.wav');
-const audio_resp_file = require('path').resolve(__dirname, './resp.mp3');
+const mp3_resp_file = require('path').resolve(__dirname, './resp.mp3');
+const wav_resp_file = require('path').resolve(__dirname, './resp.wav');
 
 module.exports = new AlexaAvs();
 
@@ -184,45 +187,66 @@ function playAudioResponse(self, data) {
     console.log('multipart msg separator: ' + /--[a-zA-Z0-9]+.*--/m.exec(s));
     k = /--[a-zA-Z0-9]+.*--/m.exec(s).index - 2;
  
-    var stream = fs.createWriteStream(audio_resp_file);
-    stream.write(data);
-    stream.end();
-    stream.on('finish', function () {
+    var input = fs.createWriteStream(mp3_resp_file);
+    input.write(data);
+    input.end();
+    input.on('finish', function () {
 	console.log('saved audio resp file to underlying fs');
-	console.log('*** PLAYING RESPONSE ***');
-	var play = player.play(audio_resp_file, function (err) {
-	    if (err) {
-		throw err;
-	    }
-	    console.log('*** END OF RESPONSE ***');
+	console.log('encoding resp audio to WAV format');
+
+	var inStream = fs.createReadStream(mp3_resp_file);
+
+	const child = spawn('aplay', ['-f', 'S16_LE', '-c', '1', '-r', '16000', '-t', 'raw', '--buffer-size', '4096']);
+	child.stdin._writableState.highWaterMark = 8192;
+
+	child.on('close', function (err) {
+	    console.log('*** end of response ***');
+	    self.processingRequest = false;
 	});
-	self.processingRequest = false;
+
+	var decoder = new lame.Decoder();
+
+	inStream.pipe(decoder);
+
+	decoder.on('format', function (format) {
+	    console.log('*** alexa\'s speaking ***');
+	    var writer = new wav.Writer(format);
+	    decoder.pipe(writer).pipe(child.stdin);
+	});
     });
 }
 
 function startRecording(self) {
-    console.log('*** RECORDING ***');
-    const child = spawn('rec',
-			[
-			    audio_ask_file,
-			    'rate', '16k',
-			    'silence', '1', '0.1', '3%', '1', '3.0', '3%'
-			]);
+    console.log('*** recording ***');
 
-    child.on('close', function (c) {
+    var output = fs.createWriteStream(audio_ask_file);
+    const child = spawn('arecord', ['-f', 'S16_LE', '-c', '1', '-r', '16000', '-t', 'raw', '--buffer-size', '512']);
+    child.stdout._readableState.highWaterMark = 1024;
+
+    child.stdout.pipe(output);
+
+    child.on('exit', function (c) {
 	console.log('*** END OF RECORDING ***');
-	console.log('saved recorded audio in ' + audio_ask_file);
 	self.emit('audio_rec_ready', self);
 	console.log('err: ' + c);
     });
+
+    /*
+     * FIXME: find out a better way to detect silence in arecord and then remove me please
+     */
+    const recordingInMillisecs = 6 * 1000;
+    setTimeout(function () {
+	output.end();
+	child.kill(); /* gracefully terminate arecord by sending out SIGTERM */
+    }, recordingInMillisecs);
 }
 
 function onAudioRecReady(self) {
     var reqUrl = 'https://access-alexa-na.amazon.com/v1/avs/speechrecognizer/recognize';
 
     const child = spawn('curl',
-			['-i',
-			 //'-v',
+			['-s',
+			 '-i',
 			 '-H',
 			 'Expect:',
 			 '-H',
@@ -235,11 +259,6 @@ function onAudioRecReady(self) {
 			]);
 
     var buffer = new Buffer('');
-
-    /*
-    * var curlLog = fs.createWriteStream('/tmp/.__curl.log');
-    * child.stderr.pipe(curlLog);
-    */
 
     child.stdout.on('data', function (data) {
 	buffer = Buffer.concat([buffer, data]);
