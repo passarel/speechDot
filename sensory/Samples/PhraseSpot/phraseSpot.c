@@ -222,7 +222,6 @@ int main(int argc, char **argv)
 		if (!thfRecogReset(ses, r_trig))
 			THROW("thfRecogReset");
 
-		/* Pipelined recognition */
 		done = 0;
 		while (!done) {
 			audioEventLoop();
@@ -239,68 +238,32 @@ int main(int argc, char **argv)
 			}
 		}
 
-		/* Report N-best recognition result */
 		rres = NULL;
-
-		/*
-		switch (status) {
-		case RECOG_QUIET:
-			disp(cons, "quiet");
-			break;
-		case RECOG_SOUND:
-			disp(cons, "sound");
-			break;
-		case RECOG_IGNORE:
-			disp(cons, "ignored");
-			break;
-		case RECOG_SILENCE:
-			disp(cons, "timeout: silence");
-			break;
-		case RECOG_MAXREC:
-			disp(cons, "timeout: maxrecord");
-			break;
-		case RECOG_DONE:
-			disp(cons, "end-of-speech");
-			break;
-		default:
-			disp(cons, "other");
-			break;
-		}
-		*/
 
 		if (status == RECOG_DONE) {
 			const char *walign, *palign;
 			if (!thfRecogResult(ses, r_trig, &score, &rres, &walign, &palign, NULL, NULL, NULL, NULL))
 				THROW("thfRecogResult");
-			if (rres == 0)
+			if (rres == 0) {
+				stopRecord();
 				break;
-			//sprintf(str, "Phrasespot Result: %s (%ld)\n%s", rres, (long) (1000 * score + .5), walign);
-			//disp(cons, rres);
+			}
 			sprintf(str, "%s", rres);
 		} else {
 			disp(cons, "No phrasespot recognition result");
+			stopRecord();
 			continue;
 		}
-
-		/*
-		if (strcmp(str, "Hey Seary") == 0 || strcmp(str, "Ok Google") == 0 || strcmp(str, "Hey Kor tana") == 0 ||
-			strcmp(str, "Alexa") == 0) {
-			disp(cons, str);
-		    continue;
-		}
-		*/
 
 		if (strcmp(str, "hey siri") == 0 || strcmp(str, "ok_google") == 0 || strcmp(str, "hey_cortana") == 0 ||
 			strcmp(str, "Alexa") == 0) {
 			disp(cons, str);
+			stopRecord();
 		    continue;
 		}
 
 		if (!thfRecogPrepSeq(ses, r_cmd, r_trig))
 			THROW("thfRecogPrepSeq");
-
-		//if (!thfRecogReset(ses, r_trig))
-			//THROW("thfRecogReset");
 
 		done = 0;
 		while (!done) {
@@ -315,7 +278,6 @@ int main(int argc, char **argv)
 				if (status != RECOG_QUIET && status != RECOG_SOUND) {
 					done = 1;
 					stopRecord();
-					//disp(cons, "Stopped recording");
 				}
 			}
 		}
@@ -323,9 +285,6 @@ int main(int argc, char **argv)
 		rres = NULL;
 		if (status == RECOG_DONE || status == RECOG_MAXREC) {
 			thfRecogGetSpeechRange(ses, r_cmd, &from, &to);
-			//sprintf(str, "Found speech from %ld to %ld ms", (long) from, (long) to);
-			//disp(cons, str);
-			//disp(cons, "Recognition results...");
 			{
 				float clip;
 				if (!thfRecogGetClipping(ses, r_cmd, &clip))
@@ -343,8 +302,6 @@ int main(int argc, char **argv)
 					THROW("thfRecogResult");
 				if (rres == 0)
 					break;
-				//sprintf(str, "Result %i: %s (%ld)", i + 1, rres, (long) (1000 * score + .5));
-				//disp(cons, str);
 				sprintf(str, "%s %s", str, rres);
 				disp(cons, str);
 			}

@@ -169,6 +169,7 @@ int main(int argc, char **argv)
 				p = NULL;
 				if (status == RECOG_DONE) {
 					done = 1;
+					stopRecord();
 				}
 			}
 		}
