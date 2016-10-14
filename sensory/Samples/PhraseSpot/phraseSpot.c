@@ -42,7 +42,7 @@
 #define PHRASESPOT_BEAM    (100.f)            /* Pruning beam */
 #define PHRASESPOT_ABSBEAM (100.f)            /* Pruning absolute beam */
 
-#define PHRASESPOT_DELAY  20                 /* Phrasespotting Delay */
+#define PHRASESPOT_DELAY  60                 /* Phrasespotting Delay */
 
 #define MAXSTR             (512)              /* Output string size */
 #define SHOWAMP            (0)                /* Display amplitude */

@@ -2,14 +2,21 @@ const spawn = require('child_process').spawn;
 const execSync = require('child_process').execSync;
 const exec = require('child_process').exec;
 const appUtils = require('./src/utils/app_utils.js');
+const audioUtils = require('./src/utils/audio_utils.js');
 const Ofono = require('./src/dbus/Ofono.js');
 const Bluez = require('./src/dbus/Bluez.js');
 const path = require('path');
-const audio_responses_path = path.resolve(__dirname, 'audio_responses');
 const bash_scripts_path = path.resolve(__dirname, 'bash_scripts');
 const ProcessManager = require('./src/ProcessManager.js');
 
-var AlexaAvs = require('./alexa/client/AlexaAvs.js');
+const AlexaAvs = require('./alexa/client/AlexaAvs.js');
+
+const playAudioResponseAsync = audioUtils.playAudioResponseAsync;
+const playAudioResponse = audioUtils.playAudioResponse;
+const sayThisNameAsync = audioUtils.sayThisNameAsync;
+const sayThisName = audioUtils.sayThisName;
+const sayThisTextAsync = audioUtils.sayThisTextAsync;
+const sayThisText = audioUtils.sayThisText;
 
 var activeModem = null;
 var incomingCall = null;
@@ -300,49 +307,6 @@ function onHeyCortana() {
 function onAlexa() {
 	AlexaAvs.requestRegCode(AlexaAvs);
 	AlexaAvs.sendRequestToAVS(AlexaAvs);
-}
-
-function playAudioResponseAsync(fileName, onComplete) {
-	console.log('  playAudioResponseAsync: ' + fileName);
-	var cmd = 'aplay ' + audio_responses_path + '/' + fileName;
-	return execAsync(cmd, onComplete);
-}
-
-function sayThisNameAsync(name, onComplete) {
-	name = name.replace('iPhone', 'i phone') + '.';
-	name = name.replace('iPad', 'i pad') + '.';
-	return sayThisTextAsync(name, onComplete);
-}
-
-function sayThisTextAsync(text, onComplete) {
-	console.log('  sayThisText: ' + text);
-	var cmd = bash_scripts_path + '/text_to_speech.sh ' + '"' + text + '"';
-	return execAsync(cmd, onComplete);
-}
-
-function execAsync(cmd, onComplete) {
-	return exec(cmd, (error, stdout, stderr) => {
-		if (error) {
-			console.error(`exec error: ${error}`);
-		}
-		if (onComplete) onComplete();
-	});
-}
-
-function playAudioResponse(fileName) {
-	console.log('  playAudioResponse: ' + fileName);
-	execSync('aplay ' + audio_responses_path + '/' + fileName);
-}
-
-function sayThisName(name) {
-	name = name.replace('iPhone', 'i phone') + '.';
-	name = name.replace('iPad', 'i pad') + '.';
-	sayThisText(name);
-}
-
-function sayThisText(text, onComplete) {
-	console.log('  sayThisText: ' + text)
-	execSync(bash_scripts_path + '/text_to_speech.sh ' + '"' + text + '"');
 }
 
 function findModem(modems, opts) {
