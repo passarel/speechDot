@@ -34,6 +34,7 @@ function AlexaAvs() {
     self.atokenRefresher = null;
 
     self.requestRegCode = requestRegCode;
+    self.requestedRegCode = false;
     self.requestAccessToken = requestAccessToken;
     self.sendRequestToAVS = sendRequestToAVS;
 
@@ -48,6 +49,11 @@ function AlexaAvs() {
 function requestRegCode(self) {
     if (self.sessionId !== null && self.accessToken !== null) {
         console.log('user has already been authenticated');
+	return;
+    }
+    /* request authentication only once */
+    if (self.requestedRegCode === true) {
+	console.log('*** register your device by visiting the following URL: ' + config.serviceUrl + '/provision/' + self.regCode);
 	return;
     }
 
@@ -74,6 +80,7 @@ function requestRegCode(self) {
 		console.log('regCode: ' + self.regCode);
 		console.log('sessionId: ' + self.sessionId);
 		console.log('*** register your device by visiting the following URL: ' + config.serviceUrl + '/provision/' + self.regCode);
+		self.requestedRegCode = true;
 	    } else {
 		console.log('error - status code: ' + res.statusCode);
 	    }
