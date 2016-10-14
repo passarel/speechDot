@@ -52,8 +52,8 @@ load-module module-switch-on-port-available
 #.ifexists module-udev-detect.so
 
 #load-module module-udev-detect tsched=true tsched_buffer_size=1048576
-load-module module-udev-detect tsched=0
-#load-module module-udev-detect
+#load-module module-udev-detect tsched=0
+load-module module-udev-detect
 
 #.else
 ### Use the static hardware detection module (for systems that lack udev support)
