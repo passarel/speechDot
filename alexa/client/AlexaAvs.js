@@ -46,7 +46,7 @@ function AlexaAvs() {
 }
 
 function requestRegCode(self) {
-    if (self.sessionId !== null) {
+    if (self.sessionId !== null && self.accessToken !== null) {
         console.log('user has already been authenticated');
 	return;
     }
