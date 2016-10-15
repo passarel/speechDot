@@ -4,6 +4,7 @@ const execSync = require('child_process').execSync;
 const exec = require('child_process').exec;
 const path = require('path');
 const audio_responses_path = path.resolve(__dirname, '../../audio_responses');
+const bash_scripts_path = path.resolve(__dirname, '../../bash_scripts');
 
 module.exports = {
 		
@@ -33,40 +34,52 @@ module.exports = {
 		}
 	},
 	
-	playAudioResponseAsync: function(fileName, onComplete) {
-		console.log('  playAudioResponseAsync: ' + fileName);
-		var cmd = 'aplay ' + audio_responses_path + '/' + fileName;
-		return execAsync(cmd, onComplete);
-	},
+	playAudioResponseAsync: playAudioResponseAsync,
 
-	sayThisNameAsync: function(name, onComplete) {
-		name = name.replace('iPhone', 'i phone') + '.';
-		name = name.replace('iPad', 'i pad') + '.';
-		return sayThisTextAsync(name, onComplete);
-	},
-
-	sayThisTextAsync: function(text, onComplete) {
-		console.log('  sayThisText: ' + text);
-		var cmd = bash_scripts_path + '/text_to_speech.sh ' + '"' + text + '"';
-		return execAsync(cmd, onComplete);
-	},
-
-	playAudioResponse: function(fileName) {
-		console.log('  playAudioResponse: ' + fileName);
-		execSync('aplay ' + audio_responses_path + '/' + fileName);
-	},
-
-	sayThisName: function(name) {
-		name = name.replace('iPhone', 'i phone') + '.';
-		name = name.replace('iPad', 'i pad') + '.';
-		sayThisText(name);
-	},
-
-	sayThisText: function(text, onComplete) {
-		console.log('  sayThisText: ' + text)
-		execSync(bash_scripts_path + '/text_to_speech.sh ' + '"' + text + '"');
-	}
+	sayThisTextAsync: sayThisTextAsync,
 	
+	sayThisNameAsync: sayThisNameAsync,
+
+	playAudioResponse: playAudioResponse,
+
+	sayThisText: sayThisText,
+	
+	sayThisName: sayThisName
+	
+}
+
+function playAudioResponseAsync(fileName, onComplete) {
+	console.log('  playAudioResponseAsync: ' + fileName);
+	var cmd = 'aplay ' + audio_responses_path + '/' + fileName;
+	return execAsync(cmd, onComplete);
+}
+
+function sayThisTextAsync(text, onComplete) {
+	console.log('  sayThisText: ' + text);
+	var cmd = bash_scripts_path + '/text_to_speech.sh ' + '"' + text + '"';
+	return execAsync(cmd, onComplete);
+}
+
+function sayThisNameAsync(name, onComplete) {
+	name = name.replace('iPhone', 'i phone') + '.';
+	name = name.replace('iPad', 'i pad') + '.';
+	return sayThisTextAsync(name, onComplete);
+}
+
+function playAudioResponse(fileName) {
+	console.log('  playAudioResponse: ' + fileName);
+	execSync('aplay ' + audio_responses_path + '/' + fileName);
+}
+
+function sayThisText(text, onComplete) {
+	console.log('  sayThisText: ' + text)
+	execSync(bash_scripts_path + '/text_to_speech.sh ' + '"' + text + '"');
+}
+
+function sayThisName(name) {
+	name = name.replace('iPhone', 'i phone') + '.';
+	name = name.replace('iPad', 'i pad') + '.';
+	sayThisText(name);
 }
 
 function execAsync(cmd, onComplete) {
