@@ -21,6 +21,9 @@ const wav_resp_file = require('path').resolve(__dirname, './resp.wav');
 const start_rec_file = require('path').resolve(__dirname, './start_recording.wav');
 const stop_rec_file = require('path').resolve(__dirname, './stop_recording.wav');
 
+const ipAddr = execSync('ip route get 1 | awk \'{print $NF;exit}\'').toString().trim();
+const serviceUrl = 'https://' + ipAddr + ':' + config.servicePort;
+
 module.exports = new AlexaAvs();
 
 function AlexaAvs() {
@@ -51,15 +54,16 @@ function requestRegCode(self) {
         console.log('user has already been authenticated');
 	return;
     }
+
     /* request authentication only once */
     if (self.requestedRegCode === true) {
-	console.log('*** register your device by visiting the following URL: ' + config.serviceUrl + '/provision/' + self.regCode);
+	console.log('*** register your device by visiting the following URL: ' + serviceUrl + '/provision/' + self.regCode);
 	return;
     }
 
     var options = {
 	host: 'localhost',
-	port: 3000,
+	port: config.servicePort,
 	path: '/provision/regCode?' + 'productId=' + config.productId + '&dsn=' + config.dsn,
 	method: 'GET',
 	key: fs.readFileSync(certs_path + '/client/client.key'),
@@ -79,7 +83,7 @@ function requestRegCode(self) {
 		self.sessionId = result['sessionId'];
 		console.log('regCode: ' + self.regCode);
 		console.log('sessionId: ' + self.sessionId);
-		console.log('*** register your device by visiting the following URL: ' + config.serviceUrl + '/provision/' + self.regCode);
+		console.log('*** register your device by visiting the following URL: ' + serviceUrl + '/provision/' + self.regCode);
 		self.requestedRegCode = true;
 	    } else {
 		console.log('error - status code: ' + res.statusCode);
@@ -119,7 +123,7 @@ function requestAccessToken(self) {
 
     var options = {
 	host: 'localhost',
-	port: 3000,
+	port: config.servicePort,
 	path: '/provision/accessToken?' + 'sessionId=' + self.sessionId,
 	method: 'GET',
 	key: fs.readFileSync(certs_path + '/client/client.key'),
