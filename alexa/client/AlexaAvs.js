@@ -197,10 +197,6 @@ function playAudioResponse(self, data) {
 	return;
     }
 
-    i = i + 4; /* skip CRLF chars */
-    console.log('multipart msg separator: ' + /--[a-zA-Z0-9]+.*--/m.exec(s));
-    k = /--[a-zA-Z0-9]+.*--/m.exec(s).index - 2;
- 
     var input = fs.createWriteStream(mp3_resp_file);
     input.write(data);
     input.end();
