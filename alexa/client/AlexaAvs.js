@@ -5,6 +5,8 @@ var fs = require('fs');
 var player = require('play-sound')(opts = {});
 var lame = require('lame');
 var wav = require('wav');
+const audioUtils = require('../../src/utils/audio_utils.js');
+const sayThisText = audioUtils.sayThisText;
 
 const spawn = require('child_process').spawn;
 const execSync = require('child_process').execSync;
@@ -35,9 +37,9 @@ function AlexaAvs() {
     self.doSendRequest = false;
     self.processingRequest = false;
     self.atokenRefresher = null;
+    self.alexaAuthUrl = null;
 
     self.requestRegCode = requestRegCode;
-    self.requestedRegCode = false;
     self.requestAccessToken = requestAccessToken;
     self.sendRequestToAVS = sendRequestToAVS;
 
@@ -54,10 +56,8 @@ function requestRegCode(self) {
         console.log('user has already been authenticated');
 	return;
     }
-
     /* request authentication only once */
-    if (self.requestedRegCode === true) {
-	console.log('*** register your device by visiting the following URL: ' + serviceUrl + '/provision/' + self.regCode);
+    if (self.alexaAuthUrl !== null) {
 	return;
     }
 
@@ -83,8 +83,9 @@ function requestRegCode(self) {
 		self.sessionId = result['sessionId'];
 		console.log('regCode: ' + self.regCode);
 		console.log('sessionId: ' + self.sessionId);
-		console.log('*** register your device by visiting the following URL: ' + serviceUrl + '/provision/' + self.regCode);
-		self.requestedRegCode = true;
+		self.alexaAuthUrl = serviceUrl + '/provision/' + self.regCode;
+		sayThisText('no access token for Alexa');
+		console.log('*** register your Alexa device by visiting the following URL: ' + self.alexaAuthUrl);
 	    } else {
 		console.log('error - status code: ' + res.statusCode);
 	    }
@@ -154,6 +155,8 @@ function requestAccessToken(self) {
 		self.emit('access_token_ready', self);
 	    } else {
 		console.log('error - status code: ' + res.statusCode);
+		sayThisText('no access token for Alexa');
+		console.log('*** register your Alexa device by visiting the following URL: ' + self.alexaAuthUrl);
 	    }
 	});
 	res.on('data', function (data) {
