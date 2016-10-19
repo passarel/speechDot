@@ -7,6 +7,7 @@ var lame = require('lame');
 var wav = require('wav');
 const audioUtils = require('../../src/utils/audio_utils.js');
 const sayThisText = audioUtils.sayThisText;
+const soundMeter = require('./SoundMeter.js');
 
 const spawn = require('child_process').spawn;
 const execSync = require('child_process').execSync;
@@ -84,7 +85,7 @@ function requestRegCode(self) {
 		console.log('regCode: ' + self.regCode);
 		console.log('sessionId: ' + self.sessionId);
 		self.alexaAuthUrl = serviceUrl + '/provision/' + self.regCode;
-		sayThisText('no access token for Alexa');
+		sayThisText('no access token');
 		console.log('*** register your Alexa device by visiting the following URL: ' + self.alexaAuthUrl);
 	    } else {
 		console.log('error - status code: ' + res.statusCode);
@@ -155,7 +156,7 @@ function requestAccessToken(self) {
 		self.emit('access_token_ready', self);
 	    } else {
 		console.log('error - status code: ' + res.statusCode);
-		sayThisText('no access token for Alexa');
+		sayThisText('no access token');
 		console.log('*** register your Alexa device by visiting the following URL: ' + self.alexaAuthUrl);
 	    }
 	});
@@ -235,29 +236,31 @@ function startRecording(self) {
     execSync('aplay ' + start_rec_file + ' 2>&1 >/dev/null');
 
     var output = fs.createWriteStream(audio_ask_file);
-    const child = spawn('arecord', ['-f', 'S16_LE', '-c', '1', '-r', '16000', '-t', 'raw', '--buffer-size', '512']);
-    child.stdout._readableState.highWaterMark = 1024;
+    const child = spawn('arecord', ['-f', 'S16_LE', '-c', '1', '-r', '16000', '-t', 'raw', '--buffer-size', '2048']);
+    child.stdout._readableState.highWaterMark = 4096;
 
     child.on('exit', function (c) {
-	console.log('err: ' + c);
+	console.log('arecord err: ' + c);
 	if (c !== 0 && c !== 1) {
 	    throw c;
 	}
-    });
-
-    child.stdout.pipe(output).on('finish', function () {
+	soundMeter.removeAllListeners('speech_end');
 	console.log('*** end of recording ***');
+	output.end();
 	execSync('aplay ' + stop_rec_file + ' 2>&1 >/dev/null');
 	self.emit('audio_rec_ready', self);
     });
 
-    /*
-     * FIXME: find out a better way to detect silence in arecord and then remove me please
-     */
-    const recordingInMillisecs = 6 * 1000;
-    setTimeout(function () {
+    soundMeter.on('speech_end', function () {
 	child.kill(); /* gracefully terminate arecord by sending out SIGTERM */
-    }, recordingInMillisecs);
+    });
+
+    child.stdout.on('data', function (d) {
+	soundMeter.write(d);
+    });
+    child.stdout.on('data', function (d) {
+	output.write(d);
+    });
 }
 
 function onAudioRecReady(self) {
