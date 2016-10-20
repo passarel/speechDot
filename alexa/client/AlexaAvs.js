@@ -7,7 +7,7 @@ var lame = require('lame');
 var wav = require('wav');
 const audioUtils = require('../../src/utils/audio_utils.js');
 const sayThisText = audioUtils.sayThisText;
-const soundMeter = require('./SoundMeter.js');
+const SoundMeter = require('./SoundMeter.js');
 
 const spawn = require('child_process').spawn;
 const execSync = require('child_process').execSync;
@@ -234,33 +234,61 @@ function startRecording(self) {
     console.log('*** recording ***');
 
     execSync('aplay ' + start_rec_file + ' 2>&1 >/dev/null');
-
+    
     var output = fs.createWriteStream(audio_ask_file);
     const child = spawn('arecord', ['-f', 'S16_LE', '-c', '1', '-r', '16000', '-t', 'raw', '--buffer-size', '2048']);
     child.stdout._readableState.highWaterMark = 4096;
+    
+    var isRecording = true;
+    
+    child.stderr.on('data', function(data) {
+    	console.log(data.toString());
+    });
+    
+    child.stdout.on('error', function (err) {
+    	console.log('arecord err -> ' + err);
+    });
 
     child.on('exit', function (c) {
-	console.log('arecord err: ' + c);
-	if (c !== 0 && c !== 1) {
-	    throw c;
-	}
-	soundMeter.removeAllListeners('speech_end');
-	console.log('*** end of recording ***');
-	output.end();
-	execSync('aplay ' + stop_rec_file + ' 2>&1 >/dev/null');
-	self.emit('audio_rec_ready', self);
+		console.log('arecord err: ' + c);
+		if (c !== 0 && c !== 1) {
+		    throw c;
+		}
+		soundMeter.removeAllListeners('speech_begin');
+		soundMeter.removeAllListeners('speech_end');
+		console.log('*** end of recording ***');
+		output.end();
+		execSync('aplay ' + stop_rec_file + ' 2>&1 >/dev/null');
+		self.emit('audio_rec_ready', self);
     });
+    
+    var isSpeechStarted = false;
+    const soundMeter = new SoundMeter();
 
+    soundMeter.on('speech_begin', function (data) {
+    	output.write(data);
+    	isSpeechStarted = true;
+    });
+    
     soundMeter.on('speech_end', function () {
-	child.kill(); /* gracefully terminate arecord by sending out SIGTERM */
+    	child.kill(); // gracefully terminate arecord by sending out SIGTERM
+    	isRecording = false;
     });
-
+    
     child.stdout.on('data', function (d) {
-	soundMeter.write(d);
+    	soundMeter.write(d);
+    	if (isSpeechStarted) {
+    		output.write(d);
+    	}
     });
-    child.stdout.on('data', function (d) {
-	output.write(d);
-    });
+    
+    //max 6.5sec window
+    setTimeout(function() {
+    	if (isRecording) {
+        	child.kill(); // gracefully terminate arecord by sending out SIGTERM
+        	isRecording = false;
+    	}
+    }, 6500);
 }
 
 function onAudioRecReady(self) {

@@ -150,12 +150,11 @@ function onSensoryData(data) {
  	 * I have to comment this out because it is causing the speechdot to hang and become unresponsive.
  	 * There is also ALOT of false positive for Alexa.
  	 * You MUST use arecord to use the mic, otherwise there will be issues with stability.
- 	 * 
+ 	 */
 	if (_data == 'Alexa') {
 	        console.log('onAlexa');
 	        onAlexa();
 	}
-	*/
  	
  	if (incomingCall && (_data === 'Jessina Dismiss')) {
  		Ofono.hangupCall(incomingCall, function() {
