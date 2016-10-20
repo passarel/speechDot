@@ -305,8 +305,11 @@ function onHeyCortana() {
 }
 
 function onAlexa() {
-	AlexaAvs.requestRegCode(AlexaAvs);
-	AlexaAvs.sendRequestToAVS(AlexaAvs);
+    if (isVoiceRecognitionOn) {
+	return;
+    }
+    AlexaAvs.requestRegCode(AlexaAvs);
+    AlexaAvs.sendRequestToAVS(AlexaAvs);
 }
 
 function findModem(modems, opts) {
