@@ -5,7 +5,7 @@ var spawn = require('child_process').spawn;
 util.inherits(SoundMeter, EventEmitter);
 
 const consecutiveSilentSamples = 12;
-const threshold = 10.2;
+const threshold = 10.0;
 
 function SoundMeter() {
 	this.ts = null;
