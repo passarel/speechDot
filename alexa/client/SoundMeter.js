@@ -4,55 +4,54 @@ var spawn = require('child_process').spawn;
 
 util.inherits(SoundMeter, EventEmitter);
 
+const consecutiveSilentSamples = 12;
+const threshold = 10.2;
+
 function SoundMeter() {
+	this.ts = null;
+	this.samples = [];
+	this.counter = 0;
+	this.isSpeechStarted = false;
     EventEmitter.call(this);
 }
 
-var ts = null;
-var samples = [];
-var counter = 0;
-
-var consecutiveSilentSamples = 12;
-var threshold = 10.2; //determines if frame is silent
-
-var isSpeechStarted = false;
-
 SoundMeter.prototype.write = function (data) {
     for (var i = 0; i < data.length; i += 2) {
-		var sample = data.readIntLE(i, 2) / 32768;
-		samples.push(sample);
-		if (samples.length == 2048) {
-			var loudness = calculateLoudness(samples);
-			if (!isSpeechStarted) {
+		const sample = data.readIntLE(i, 2) / 32768;
+		this.samples.push(sample);
+		if (this.samples.length == 2048) {
+			const loudness = calculateLoudness(this.samples);
+			if (!this.isSpeechStarted) {
 				if (loudness > threshold) {
-					isSpeechStarted = true;
+					this.isSpeechStarted = true;
 					this.emit('speech_begin', data);
 					console.log('speech_begin');
 					console.log();
 				}
 			} else {
-				
 			    if (loudness <= threshold) {
-					counter++;
-					if (counter == consecutiveSilentSamples) {
+			    	this.counter++;
+					if (this.counter == consecutiveSilentSamples) {
 						//console.log('time[' + new Date() + '], volume=' + loudness);
-						if (ts == null) {
-							ts = new Date().getTime()
+						/*
+						if (this.ts == null) {
+							this.ts = new Date().getTime()
 						} else {
-							var timeNow = new Date().getTime();
+							const timeNow = new Date().getTime();
 							console.log(timeNow - ts)
-							ts = timeNow
+							this.ts = timeNow
 						}
+						*/
 					    this.emit('speech_end');
 					    console.log('speech_end');
-					    isSpeechStarted = false;
-					    counter = 0;
+					    this.isSpeechStarted = false;
+					    this.counter = 0;
 					}
 			    } else {
-			    	counter = 0;
+			    	this.counter = 0;
 			    }
 			}
-			samples = [];
+			this.samples = [];
 		}
     }
 };
