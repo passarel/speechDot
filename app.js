@@ -151,7 +151,7 @@ function onSensoryData(data) {
  	 * There is also ALOT of false positive for Alexa.
  	 * You MUST use arecord to use the mic, otherwise there will be issues with stability.
  	 */
-	if (_data == 'Alexa') {
+	if (_data == 'alexa') {
 	        console.log('onAlexa');
 	        onAlexa();
 	}

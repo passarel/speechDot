@@ -30,6 +30,9 @@ tst make
 tst cd ~/speechdot/lib/fcntl
 tst npm install
 
+tst cd ~/speechdot/lib/dbus
+tst npm install
+
 tst cd ~/speechdot
 tst npm install
 

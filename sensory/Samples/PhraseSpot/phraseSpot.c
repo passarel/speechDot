@@ -256,7 +256,7 @@ int main(int argc, char **argv)
 		}
 
 		if (strcmp(str, "hey siri") == 0 || strcmp(str, "ok_google") == 0 || strcmp(str, "hey_cortana") == 0 ||
-			strcmp(str, "Alexa") == 0) {
+			strcmp(str, "alexa") == 0) {
 			disp(cons, str);
 			stopRecord();
 		    continue;

@@ -136,7 +136,7 @@ function startBluez(self) {
 
 
 function startOfono(self) {
-	self.ofonoChild = spawn('/usr/sbin/ofonod', ['-d', '-n']);
+	self.ofonoChild = spawn('/usr/local/sbin/ofonod', ['-d', '-n']);
 	self.ofonoChild.on('exit', function() {
 		isOfonoDbusOnline = false;
 		console.log('[error] ofonoChild process has exited.');
