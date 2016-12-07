@@ -148,7 +148,7 @@ function startOfono(self) {
 
 function startPulse(self) {
 	if (!self.isBluezDbusOnline || !self.isOfonoDbusOnline) return;
-	self.pulseChild = spawn('/usr/bin/pulseaudio', ['-v']);
+	self.pulseChild = spawn('/usr/bin/pulseaudio', ['--log-level=info']);
 	self.pulseChild.on('exit', function() {
 		console.log('[error] pulseChild process has exited.');
 		self.reset();

@@ -1,0 +1,1 @@
+cmd_Release/obj.target/dbus.node := g++ -shared -pthread -rdynamic  -Wl,-soname=dbus.node -o Release/obj.target/dbus.node -Wl,--start-group Release/obj.target/dbus/src/dbus.o -Wl,--end-group -ldbus-1 -lexpat

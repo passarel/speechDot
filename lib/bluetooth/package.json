@@ -1,0 +1,15 @@
+{
+  "dependencies": {
+    "nan": "^2.1.0"
+  },
+  "description": "HFP Audio IO binding for Node",
+  "engines": {
+    "node": ">= 0.8.0"
+  },
+  "main": "./lib/bluetooth",
+  "name": "bluetooth",
+  "scripts": {
+    "install": "node-gyp configure build"
+  },
+  "version": "0.0.01"
+}

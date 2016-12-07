@@ -1,0 +1,15 @@
+{
+  "dependencies": {
+    "nan": "^2.1.0"
+  },
+  "description": "Alsa bindings",
+  "engines": {
+    "node": ">= 0.8.0"
+  },
+  "main": "./lib/alsa",
+  "name": "alsa",
+  "scripts": {
+    "install": "node-gyp configure build"
+  },
+  "version": "0.0.01"
+}

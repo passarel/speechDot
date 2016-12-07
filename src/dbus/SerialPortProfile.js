@@ -1,5 +1,8 @@
 const DBus = require('../../lib/dbus');
-const fcntl = require('../../lib/fcntl');
+
+//const fcntl = require('../../lib/fcntl');
+
+const fcntl = require('../../lib/bluetooth').hfpio;
 
 const fs = require('fs');
 const dbusUtils = require('../utils/dbus_utils.js');

@@ -27,7 +27,10 @@ tst npm install
 tst cd ~/speechdot/sensory/Samples
 tst make
 
-tst cd ~/speechdot/lib/fcntl
+tst cd ~/speechdot/lib/alsa
+tst npm install
+
+tst cd ~/speechdot/lib/bluetooth
 tst npm install
 
 tst cd ~/speechdot/lib/dbus

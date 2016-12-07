@@ -1,13 +1,11 @@
 const DBus = require('../../lib/dbus');
 
-const hfpio = require('../../lib/fcntl');
-
-//const hfpio = require('../../lib/hfpio');
+const hfpio = require('../../lib/bluetooth').hfpio;
 
 const spawn = require('child_process').spawn;
-
 const appUtils = require('../utils/app_utils.js');
 const dbusUtils = require('../utils/dbus_utils.js');
+
 const bus = dbusUtils.bus;
 const notErr = dbusUtils.notErr;
 const addSignalHandler = dbusUtils.addSignalHandler;
