@@ -1,5 +1,6 @@
 const DBus = require('../../lib/dbus');
-const hfpio = require('../../lib/fcntl');
+const a2dp = require('../../lib/bluetooth').a2dp;
+
 const spawn = require('child_process').spawn;
 const appUtils = require('../utils/app_utils.js');
 const dbusUtils = require('../utils/dbus_utils.js');
@@ -59,7 +60,10 @@ function A2dpSinkEndPoint() {
 	self.endpoint_props.Capabilities = sbc_capabilities;
 	
 	self.start = function(onComplete) {
-		registerEndpoint(self, onComplete);
+		
+		
+		
+		//registerEndpoint(self, onComplete);
 	}
 	
 	self.stop = function(onComplete) {

@@ -1,4 +1,6 @@
 const A2dpSinkEndPoint = require('./src/dbus/A2dpSinkEndPoint.js');
+
+/*
 const Bluez = require('./src/dbus/Bluez.js');
 
 Bluez.on('ready', function(adapters) {
@@ -11,5 +13,6 @@ Bluez.on('ready', function(adapters) {
 	//A2dpSinkEndPoint.start();
 	
 });
+*/
 
 
