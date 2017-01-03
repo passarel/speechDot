@@ -48,22 +48,20 @@ const max_bitpool = MAX_BITPOOL;
 const sbc_capabilities = [channel_mode, frequency, allocation_method, subbands, block_length, min_bitpool, max_bitpool];
 
 // JointStereo 44.1Khz Subbands: Blocks: 16 Bitpool Range: 2-32
-const sbc_config = [0x21, 0x15, 2, 32];
+const sbc_config = [255, 255, 2, 64];
 
-function A2dpSinkEndPoint() {
+function A2dpSinkEndPoint(adapter) {
 	var self = this;
-	self.object_path = '/MediaEndpoint/A2DPSink';
-	self.service = dbusUtils.dbus.registerService('system', 'mediaendpoint.a2dpsink');	
+	self.adapter = adapter;
+	self.object_path = '/MediaEndpoint/A2DPSink/' + adapter;
+	self.service = dbusUtils.dbus.registerService('system', 'mediaendpoint.a2dpsink.' + adapter);	
 	self.endpoint_props = {};
 	self.endpoint_props.UUID = '0000110b-0000-1000-8000-00805f9b34fb';
 	self.endpoint_props.Codec = 0x00;
 	self.endpoint_props.Capabilities = sbc_capabilities;
 	
 	self.start = function(onComplete) {
-		
-		
-		
-		//registerEndpoint(self, onComplete);
+		registerEndpoint(self, onComplete);
 	}
 	
 	self.stop = function(onComplete) {
@@ -76,7 +74,6 @@ function unregisterEndpoint(self, onComplete) {
 }
 
 function registerEndpoint(self, onComplete) {
-	
 	if (!self.profile) {
 		
 		var obj = self.service.createObject(self.object_path);
@@ -114,16 +111,18 @@ function registerEndpoint(self, onComplete) {
 		iface.update();
 	}
 	
-	bus.getInterface('org.bluez', '/org/bluez/hci0', 'org.bluez.Media1', function(err, iface) {
+	bus.getInterface('org.bluez', '/org/bluez/' + self.adapter, 'org.bluez.Media1', function(err, iface) {
 		if (notErr(err)) {
 			iface.RegisterEndpoint['timeout'] = 1000;
 			iface.RegisterEndpoint['finish'] = function() {
 				var args = Array.prototype.slice.call(arguments);
 				args.splice(0, 0, null); // there is no error
+				console.log('A2dpSinkEndPoint.registerEndpoint(' + self.adapter + ') - SUCCESS');
 				if (onComplete) onComplete.apply(null, args);
 			};
 			iface.RegisterEndpoint['error'] = function(err) {
 				console.log('[error] A2dpSinkEndPoint.registerEndpoint - ' + err);
+				console.log('A2dpSinkEndPoint.registerEndpoint(' + self.adapter + ') - ERROR');
 				if (onComplete) onComplete(err);
 			};
 			iface.RegisterEndpoint(self.object_path, self.endpoint_props);
@@ -131,4 +130,4 @@ function registerEndpoint(self, onComplete) {
 	});
 }
 
-module.exports = new A2dpSinkEndPoint();
+module.exports = A2dpSinkEndPoint;

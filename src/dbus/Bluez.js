@@ -7,6 +7,7 @@ const bus = dbusUtils.bus;
 const notErr = dbusUtils.notErr;
 const addSignalHandler = dbusUtils.addSignalHandler;
 const removeAllHandlersForSignal = dbusUtils.removeAllHandlersForSignal;
+const A2dpSinkEndPoint = require('./A2dpSinkEndPoint.js');
 
 const EventEmitter = require('events').EventEmitter;
 const util = require('util');
@@ -134,7 +135,12 @@ function Bluez() {
 							SerialPortProfile.stop(function() {
 								SerialPortProfile.start(function() {
 									console.log('serialport profile started');
-									self.emit('ready', self.adapters);
+									
+									
+									//registerA2dpSinkEndpoint(self, Object.keys(self.adapters), function() {
+										//console.log('all a2dp sink enpoints started');
+										self.emit('ready', self.adapters);
+									//});
 								});
 							});
 						});
@@ -202,6 +208,7 @@ function Bluez() {
 	var onBluezDbusOnline = function(managedObjects) {
 		self.pairModeAdapter = null;
 		self.adapters = {};
+		self.a2dpSinkEndpoints = {};
 		var addInterfacesAddedHandler = function(onComplete) {
 			removeAllHandlersForSignal('org.bluez', '/', 'org.freedesktop.DBus.ObjectManager', 'InterfacesAdded', function() {
 				addSignalHandler('org.bluez', '/', 'org.freedesktop.DBus.ObjectManager', 'InterfacesAdded', function(path, ifaces) {
@@ -311,6 +318,35 @@ function configureAdapter(self, adapterKeys, options, onComplete) {
 		}
 	}
 	config();
+}
+
+function getA2dpSinkEndPoint(self, adapter) {
+	var a2dpSinkEndPoint = self.a2dpSinkEndpoints[adapter];
+	if (!a2dpSinkEndPoint) {
+		a2dpSinkEndPoint = new A2dpSinkEndPoint(adapter);
+		self.a2dpSinkEndpoints[adapter] = a2dpSinkEndPoint;
+	}
+	return a2dpSinkEndPoint;
+}
+
+function registerA2dpSinkEndpoint(self, adapterKeys, onComplete) {
+	var i = 0;
+	var nextAdapter = function() {
+		if (i < adapterKeys.length) {
+			i++;  
+			return self.adapters[adapterKeys[i-1]];
+		}
+		return null;
+	}
+	var registerEndpoint = function() {
+		var adapter = nextAdapter();
+		if (adapter) {
+			getA2dpSinkEndPoint(self, adapter.path.replace('/org/bluez/', '')).start(registerEndpoint);
+		} else {
+			if (onComplete) onComplete();
+		}
+	}
+	registerEndpoint();
 }
 
 function setAdapterProperty(self, adapterKeys, name, val, onComplete) {
