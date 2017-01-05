@@ -32,11 +32,18 @@ ProcessManager.on('sensory_online', function(sensory) {
 	addOfonoHandlers();
 	sensory.stderr.on('data', onSensoryData);
 	playAudioResponse('speech_dot_online.wav');
+	Bluez.on('pairing_mode_on', function() {
+			playAudioResponseAsync('pairing_on.wav');
+	});
+	Bluez.on('pairing_mode_off', function() {
+		playAudioResponseAsync('pairing_off.wav');
+	});
 	isReady = true;
 });
 
 ProcessManager.on('sensory_offline', function() {
-	Bluez.removeAllListeners('pairing_mode_timeout');
+	Bluez.removeAllListeners('pairing_mode_on');
+	Bluez.removeAllListeners('pairing_mode_off');
 	Ofono.removeAllListeners('voice_recognition');
 	Ofono.removeAllListeners('modem_offline');
 	Ofono.removeAllListeners('modem_online');
@@ -202,16 +209,20 @@ function onSensoryData(data) {
  			if (err) {
  				if (err === 'no available adapter') {
  					playAudioResponseAsync('too_many_phones_connected.wav');
- 				}
- 				if (err === 'pairing already on') {
+ 				} else if (err === 'pairing already on') {
  					playAudioResponseAsync('pairing_already_on.wav');
+ 				} else {
+ 					sayThisTextAsync('failed to turn on pairing');
  				}
- 			} else {
- 				playAudioResponseAsync('pairing_on.wav');
- 				Bluez.once('pairing_mode_timeout', function() {
- 					playAudioResponseAsync('pairing_off.wav');
- 				});
  			}
+// 			else {
+// 				Bluez.on('pairing_mode_on', function() {
+// 					playAudioResponseAsync('pairing_on.wav');
+// 				});
+// 				Bluez.on('pairing_mode_off', function() {
+// 					playAudioResponseAsync('pairing_off.wav');
+// 				});
+// 			}
  		})
  	}
 }

@@ -51,15 +51,14 @@ function Bluez() {
 					device[name] = val;
 					if (name === 'Connected' && val) {
 						//self.emit('device_connected' , device.path);
-						/* not sure this code is needed
 						if (self.pairModeAdapter && device.Adapter === self.pairModeAdapter.path) {
-							PairingAgent.removeAllListeners('device_trusted');
-							console.log('[Bluez.js] device_trusted event handler removed');
 							setTimeout(function() {
 								setAdapterProperty(self, [device.Adapter], 'Discoverable', false);
-							}, 5000);
+							}, 8000); // allow time for phone name to be said first
+							// i do not love this approach, 
+							// but this way we dont need the discoverable state managed outside this object.
+							// otherwise we need app.js to explicity control discoverable state.
 						}
-						*/
 					}
 				});
 			});
@@ -71,14 +70,14 @@ function Bluez() {
 	const addSignalHandlers = function(onComplete) {
 		const keys = Object.keys(self.adapters);
 		var i = 0;
-		var nextAdapter = function() {
+		const nextAdapter = function() {
 			if (i < keys.length) {
 				i++;
 				return self.adapters[keys[i-1]];
 			}
 			return null;
 		}
-		var addPropertiesChangedHandler = function() {
+		const addPropertiesChangedHandler = function() {
 			const adapter = nextAdapter();
 			if (adapter) {
 				removeAllHandlersForSignal('org.bluez', adapter.path, 'org.freedesktop.DBus.Properties', 'PropertiesChanged', function() {
@@ -88,12 +87,12 @@ function Bluez() {
 							adapter[name] = val;
 							console.log('[Bluez.Adapter] PropertyChanged: ' + adapter.path + ', ' + name + '=' + val);
 							if (name === 'Discoverable') {
-								if (!val) {
-									self.pairModeAdapter = null;
-									self.emit('pairing_mode_timeout');
-								}
 								if (val) {
 									self.pairModeAdapter = adapter;
+									self.emit('pairing_mode_on');
+								} else {
+									self.pairModeAdapter = null;
+									self.emit('pairing_mode_off');
 								}
 							}
 							if (name === 'Class' && val === 0) {
@@ -128,7 +127,6 @@ function Bluez() {
 				if (mo[key]['org.bluez.Device1']) {
 					const device = mo[key]['org.bluez.Device1'];
 					device.path = key;
-					//if (device.Trusted) addDevice(device);
 					addDevice(device);
 				}
 				if (mo[key]['org.bluez.MediaTransport1']) {
@@ -179,41 +177,20 @@ function Bluez() {
 		});
 	}
 	
-	var pairStarting = false;
-	
 	self.pair = function(onComplete) {
 		const adapter = findAvailableAdapter(self);
 		if (!adapter) {
 			if (onComplete) onComplete('no available adapter');
 			return;
 		}
-		if (self.pairModeAdapter || pairStarting) {
+		if (self.pairModeAdapter) {
 			if (onComplete) onComplete('pairing already on');
 			return;
 		}
-		pairStarting = true;
-		setAdapterProperty(self, [adapter.path], 'Discoverable', true, function() {
-			pairStarting = false;
-			/*
-			PairingAgent.once('device_trusted', function(path) {
-				getDevice(path, function(err, device) {
-					if (notErr(err)) {
-						device.path = path;
-						addDevice(device, function() {
-							setTimeout(function() {
-								setAdapterProperty(self, [device.Adapter], 'Discoverable', false);
-							}, 5000);
-						});
-					}
-				});
-			});
-			console.log('[Bluez.js] device_trusted event handler registered');
-			*/
-			if (onComplete) onComplete();
-		});
+		setAdapterProperty(self, [adapter.path], 'Discoverable', true, onComplete);
 	}
 	
-	var onBluezDbusOnline = function(managedObjects) {
+	const onBluezDbusOnline = function(managedObjects) {
 		self.pairModeAdapter = null;
 		self.adapters = {};
 		self.a2dpSinkEndpoints = {};
@@ -226,7 +203,6 @@ function Bluez() {
 					if (ifaces['org.bluez.Device1']) {
 						const device = ifaces['org.bluez.Device1'];
 						device.path = path;
-						//if (device.Trusted) addDevice(device);
 						addDevice(device);
 					}
 				}, onComplete);
@@ -249,8 +225,8 @@ function Bluez() {
 	ProcessManager.on('bluez_online', onBluezDbusOnline);
 	
 	ProcessManager.on('pulse_online', function(sensory) {
-		//pulse needs to be online to say when a device is connected
-		//otherwise its a race condition
+		// pulse needs to be online to say when a device is connected
+		// otherwise its a race condition
 		tryConnectDevices(self, Object.keys(self.adapters));
 	});
 }
@@ -283,14 +259,14 @@ function findAvailableAdapter(self) {
 
 function resetAdapter(self, adapterKeys, onComplete) {
 	var i = 0;
-	var nextAdapter = function() {
+	const nextAdapter = function() {
 		if (i < adapterKeys.length) {
 			i++;  
 			return self.adapters[adapterKeys[i-1]];
 		}
 		return null;
 	}
-	var reset = function() {
+	const reset = function() {
 		const adapter = nextAdapter();
 		if (adapter) {
 			removeAllHandlersForSignal('org.bluez', adapter.path, 'org.freedesktop.DBus.Properties', 'PropertiesChanged', function() {
@@ -316,7 +292,7 @@ function configureAdapter(self, adapterKeys, options, onComplete) {
 		return null;
 	}
 	const config = function() {
-		var option = nextOption();
+		const option = nextOption();
 		if (option) {
 			setAdapterProperty(self, adapterKeys, option.name, option.val, config);
 		} else {
@@ -337,15 +313,15 @@ function getA2dpSinkEndPoint(self, adapter) {
 
 function registerA2dpSinkEndpoint(self, adapterKeys, onComplete) {
 	var i = 0;
-	var nextAdapter = function() {
+	const nextAdapter = function() {
 		if (i < adapterKeys.length) {
 			i++;  
 			return self.adapters[adapterKeys[i-1]];
 		}
 		return null;
 	}
-	var registerEndpoint = function() {
-		var adapter = nextAdapter();
+	const registerEndpoint = function() {
+		const adapter = nextAdapter();
 		if (adapter) {
 			getA2dpSinkEndPoint(self, adapter.path.replace('/org/bluez/', '')).start(registerEndpoint);
 		} else {
@@ -357,19 +333,21 @@ function registerA2dpSinkEndpoint(self, adapterKeys, onComplete) {
 
 function setAdapterProperty(self, adapterKeys, name, val, onComplete) {
 	var i = 0;
-	var nextAdapter = function() {
+	const nextAdapter = function() {
 		if (i < adapterKeys.length) {
 			i++;  
 			return self.adapters[adapterKeys[i-1]];
 		}
 		return null;
 	}
-	var setProperty = function() {
-		var adapter = nextAdapter();
+	const setProperty = function() {
+		const adapter = nextAdapter();
 		if (adapter) {
 			bus.getInterface('org.bluez', adapter.path, 'org.bluez.Adapter1', function(err, iface) {
 				if (notErr(err)) {
 					iface.setProperty(name, val, setProperty);
+				} else {
+					onComplete(err);
 				}
 			});
 		} else {
@@ -380,14 +358,14 @@ function setAdapterProperty(self, adapterKeys, name, val, onComplete) {
 }
 
 function removeDevices(adapter, onComplete) {
-	var nextDevice = function() {
+	const nextDevice = function() {
 		if (adapter.devices.length > 0) {
 			return adapter.devices[0];
 		}
 		return null;
 	}
-	var remove = function() {
-		var device = nextDevice();
+	const remove = function() {
+		const device = nextDevice();
 		if (device) {
 			console.log('removing device: ' + device.path);
 			removeDevice(adapter, device, function() {
