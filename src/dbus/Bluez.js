@@ -8,6 +8,7 @@ const notErr = dbusUtils.notErr;
 const addSignalHandler = dbusUtils.addSignalHandler;
 const removeAllHandlersForSignal = dbusUtils.removeAllHandlersForSignal;
 const A2dpSinkEndPoint = require('./A2dpSinkEndPoint.js');
+const A2dpAudioAgent = require('./A2dpAudioAgent.js');
 
 const EventEmitter = require('events').EventEmitter;
 const util = require('util');
@@ -25,12 +26,16 @@ function Bluez() {
 	
 	self = this;
 	
-	var addDevice = function(device, onAdded) {
+	const addMediaTransport = function(meidaTransport, onAdded) {
+		
+	}
+	
+	const addDevice = function(device, onAdded) {
 		console.log('[Bluez.js] attempting to add device...')
 		if (!self.adapters[device.Adapter]) {
-			self.adapters[device.Adapter] = {devices: [], path: device.Adapter};
+			self.adapters[device.Adapter] = {devices: [], path: device.Adapter, Discoverable: false};
 		}
-		var devices = self.adapters[device.Adapter].devices;
+		const devices = self.adapters[device.Adapter].devices;
 		for (var i=0; i<devices.length; i++) {
 			if (devices[i].path === device.path) {
 				console.log('not adding device because device already exists');
@@ -41,10 +46,12 @@ function Bluez() {
 		removeAllHandlersForSignal('org.bluez', device.path, 'org.freedesktop.DBus.Properties', 'PropertiesChanged', function() {
 			addSignalHandler('org.bluez', device.path, 'org.freedesktop.DBus.Properties', 'PropertiesChanged', function(ifaceName, props) {
 				Object.keys(props).forEach(function(name) {
-					var val = props[name];
+					const val = props[name];
 					console.log('[Bluez.Device] PropertyChanged: ' + device.path + ', ' + name + '=' + val);
 					device[name] = val;
 					if (name === 'Connected' && val) {
+						//self.emit('device_connected' , device.path);
+						/* not sure this code is needed
 						if (self.pairModeAdapter && device.Adapter === self.pairModeAdapter.path) {
 							PairingAgent.removeAllListeners('device_trusted');
 							console.log('[Bluez.js] device_trusted event handler removed');
@@ -52,6 +59,7 @@ function Bluez() {
 								setAdapterProperty(self, [device.Adapter], 'Discoverable', false);
 							}, 5000);
 						}
+						*/
 					}
 				});
 			});
@@ -60,8 +68,8 @@ function Bluez() {
 		});
 	}
 	
-	var addSignalHandlers = function(onComplete) {
-		var keys = Object.keys(self.adapters);
+	const addSignalHandlers = function(onComplete) {
+		const keys = Object.keys(self.adapters);
 		var i = 0;
 		var nextAdapter = function() {
 			if (i < keys.length) {
@@ -71,7 +79,7 @@ function Bluez() {
 			return null;
 		}
 		var addPropertiesChangedHandler = function() {
-			var adapter = nextAdapter();
+			const adapter = nextAdapter();
 			if (adapter) {
 				removeAllHandlersForSignal('org.bluez', adapter.path, 'org.freedesktop.DBus.Properties', 'PropertiesChanged', function() {
 					addSignalHandler('org.bluez', adapter.path, 'org.freedesktop.DBus.Properties', 'PropertiesChanged', function(ifaceName, props) {
@@ -104,11 +112,11 @@ function Bluez() {
 		addPropertiesChangedHandler();
 	}
 	
-	var onManagedObjects = function(mo) {
+	const onManagedObjects = function(mo) {
 		Object.keys(mo).forEach(function(key) {
 			if (key.startsWith('/org/bluez')) {
 				if (mo[key]['org.bluez.Adapter1']) {				
-					var adapter = mo[key]['org.bluez.Adapter1'];
+					const adapter = mo[key]['org.bluez.Adapter1'];
 					adapter.path = key;
 					if (!self.adapters[key]) {
 						adapter.devices = [];
@@ -118,9 +126,15 @@ function Bluez() {
 					self.adapters[key] = adapter;
 				}
 				if (mo[key]['org.bluez.Device1']) {
-					var device = mo[key]['org.bluez.Device1'];
+					const device = mo[key]['org.bluez.Device1'];
 					device.path = key;
-					if (device.Trusted) addDevice(device);
+					//if (device.Trusted) addDevice(device);
+					addDevice(device);
+				}
+				if (mo[key]['org.bluez.MediaTransport1']) {
+					const mediaTransport = mo[key]['org.bluez.MediaTransport1'];
+					mediaTransport.path = key;
+					addMediaTransport(mediaTransport);
 				}
 			}
 		});
@@ -135,8 +149,6 @@ function Bluez() {
 							SerialPortProfile.stop(function() {
 								SerialPortProfile.start(function() {
 									console.log('serialport profile started');
-									
-									
 									//registerA2dpSinkEndpoint(self, Object.keys(self.adapters), function() {
 										//console.log('all a2dp sink enpoints started');
 										self.emit('ready', self.adapters);
@@ -162,17 +174,15 @@ function Bluez() {
 	}
 
 	self.resetAdapters = function(onComplete) {
-		//ProcessManager.killOfono(function(){
-			resetAdapter(self, Object.keys(self.adapters), function() {
-				ProcessManager.reset(onComplete);
-			});
-		//});
+		resetAdapter(self, Object.keys(self.adapters), function() {
+			ProcessManager.reset(onComplete);
+		});
 	}
 	
 	var pairStarting = false;
 	
 	self.pair = function(onComplete) {
-		var adapter = findAvailableAdapter(self);
+		const adapter = findAvailableAdapter(self);
 		if (!adapter) {
 			if (onComplete) onComplete('no available adapter');
 			return;
@@ -182,12 +192,9 @@ function Bluez() {
 			return;
 		}
 		pairStarting = true;
-		// extra safe code to reset the pairStarting
-		setTimeout(function() {
-			pairStarting = false;
-		}, 2000); // it should never take more than 2 seconds.
 		setAdapterProperty(self, [adapter.path], 'Discoverable', true, function() {
 			pairStarting = false;
+			/*
 			PairingAgent.once('device_trusted', function(path) {
 				getDevice(path, function(err, device) {
 					if (notErr(err)) {
@@ -195,12 +202,13 @@ function Bluez() {
 						addDevice(device, function() {
 							setTimeout(function() {
 								setAdapterProperty(self, [device.Adapter], 'Discoverable', false);
-							}, 8000);
+							}, 5000);
 						});
 					}
 				});
 			});
 			console.log('[Bluez.js] device_trusted event handler registered');
+			*/
 			if (onComplete) onComplete();
 		});
 	}
@@ -209,23 +217,22 @@ function Bluez() {
 		self.pairModeAdapter = null;
 		self.adapters = {};
 		self.a2dpSinkEndpoints = {};
-		var addInterfacesAddedHandler = function(onComplete) {
+		const addInterfacesAddedHandler = function(onComplete) {
 			removeAllHandlersForSignal('org.bluez', '/', 'org.freedesktop.DBus.ObjectManager', 'InterfacesAdded', function() {
 				addSignalHandler('org.bluez', '/', 'org.freedesktop.DBus.ObjectManager', 'InterfacesAdded', function(path, ifaces) {
 					console.log('[Bluez.DBus] InterfacesAdded: ' + path);
 					console.log(ifaces);
 					console.log();
 					if (ifaces['org.bluez.Device1']) {
-						var device = ifaces['org.bluez.Device1'];
+						const device = ifaces['org.bluez.Device1'];
 						device.path = path;
-						if (device.Trusted) {
-							addDevice(device);
-						}
+						//if (device.Trusted) addDevice(device);
+						addDevice(device);
 					}
 				}, onComplete);
 			});
 		}
-		var addInterfacesRemovedHandler = function() {
+		const addInterfacesRemovedHandler = function() {
 			removeAllHandlersForSignal('org.bluez', '/', 'org.freedesktop.DBus.ObjectManager', 'InterfacesRemoved', function() {
 				addSignalHandler('org.bluez', '/', 'org.freedesktop.DBus.ObjectManager', 'InterfacesRemoved', function(path, ifaces) {
 					console.log('[Bluez.DBus] InterfacesRemoved: ' + path);
@@ -250,21 +257,21 @@ function Bluez() {
 
 function setAdapterClass(self, adapterKeys, clazz) {
 	for (var i=0; i<adapterKeys.length; i++) {
-		var adapter = self.adapters[adapterKeys[i]];
-		var hciN = adapter.path.replace('/org/bluez/', '');
-		var cmd = 'hciconfig ' + hciN + ' class ' + clazz;
+		const adapter = self.adapters[adapterKeys[i]];
+		const hciN = adapter.path.replace('/org/bluez/', '');
+		const cmd = 'hciconfig ' + hciN + ' class ' + clazz;
 		console.log('execSync: ' + cmd);
 		execSync(cmd);
 	}
 }
 
 function findAvailableAdapter(self) {
-	var keys = Object.keys(self.adapters);
+	const keys = Object.keys(self.adapters);
 	for (var i=0; i<keys.length; i++) {
 		if (self.adapters[keys[i]].devices.length === 0) {
 			return self.adapters[keys[i]];
 		}
-		var devices = self.adapters[keys[i]].devices;
+		const devices = self.adapters[keys[i]].devices;
 		var allDevicesOffline = true;
 		for (var j=0; j<devices.length; j++) {
 			if (devices[j].Connected) allDevicesOffline = false;
@@ -284,14 +291,13 @@ function resetAdapter(self, adapterKeys, onComplete) {
 		return null;
 	}
 	var reset = function() {
-		var adapter = nextAdapter();
+		const adapter = nextAdapter();
 		if (adapter) {
 			removeAllHandlersForSignal('org.bluez', adapter.path, 'org.freedesktop.DBus.Properties', 'PropertiesChanged', function() {
 				removeDevices(adapter, reset);
 			});
 		} else {
 			configureAdapter(self, adapterKeys, adapterConfig, function() {
-				self.pairModeAdapter = null;
 				if (onComplete) onComplete();
 			});
 		}
@@ -300,16 +306,16 @@ function resetAdapter(self, adapterKeys, onComplete) {
 }
 
 function configureAdapter(self, adapterKeys, options, onComplete) {
-	var optionKeys = Object.keys(options);
+	const optionKeys = Object.keys(options);
 	var i = 0;
-	var nextOption = function() {
+	const nextOption = function() {
 		if (i < optionKeys.length) {
 			i++;  
 			return {name: optionKeys[i-1], val: options[optionKeys[i-1]]};
 		}
 		return null;
 	}
-	var config = function() {
+	const config = function() {
 		var option = nextOption();
 		if (option) {
 			setAdapterProperty(self, adapterKeys, option.name, option.val, config);

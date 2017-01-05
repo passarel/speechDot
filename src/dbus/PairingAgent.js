@@ -128,12 +128,10 @@ function registerAgent(self, onComplete) {
 		iface.addMethod('AuthorizeService', { in: [ DBus.Define(Object), DBus.Define(String) ] }, function(device, uuid, callback) {
 			console.log('>> PairingAgent.AuthorizeService called');
 			setDeviceTrusted(device, true, function() {
-				callback();
-				process.nextTick(function() {
-					console.log('PairingAgent emitting device_trusted');
-					self.emit('device_trusted', device);
-				});
+				console.log('PairingAgent emitting device_trusted');
+				self.emit('device_trusted', device);
 			});
+			callback();
 		});
 		iface.addMethod('Cancel', {}, function(callback) {
 			console.log('>> PairingAgent.Cancel called');
