@@ -22,13 +22,31 @@ function A2dpAudioAgent(mediaTransport) {
 
 function start(self, onComplete) {
 	if (!self.started) {
-		
+		bus.getInterface('org.bluez', self.mediaTransport.path, 'org.bluez.MediaTransport1', function(err, iface) {
+			if (notErr(err)) {
+				console.log();
+				console.log();
+				console.log(iface);
+				/*
+				iface.Connect['timeout'] = 2000;
+				iface.Connect['finish'] = function() {
+					if (onComplete) onComplete.apply(null, [null]);
+				};
+				iface.Connect['error'] = function(err) {
+					console.log('[error] connect device(' + device.path + ') - ' + err);
+					if (onComplete) onComplete(err);
+				};
+				iface.Connect();
+				*/
+			}
+		});
+		self.started = true;
 	}
 }
 
 function stop(self, onComplete) {
 	if (self.started) {
-		
+
 	}
 }
 

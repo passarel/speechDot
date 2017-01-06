@@ -32,6 +32,8 @@ function Bluez() {
 	
 	const addMediaTransport = function(meidaTransport, onAdded) {
 		console.log('addMediaTransport -> ' + JSON.stringify(meidaTransport));
+		const a2dpAudioAgent = new A2dpAudioAgent(meidaTransport);
+		a2dpAudioAgent.start();
 	}
 	
 	const addDevice = function(device, onAdded) {
