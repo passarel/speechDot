@@ -14,9 +14,9 @@ util.inherits(Ofono, EventEmitter);
 
 function Ofono() {
 	
-	var self = this;
+	const self = this;
 	
-	var addHandsFreeSignalHandler = function(modem, onComplete) {
+	const addHandsFreeSignalHandler = function(modem, onComplete) {
 		removeAllHandlersForPropertyChangedSignal('org.ofono', modem.path, 'org.ofono.Handsfree', function() {
 			addPropertyChangedSignalHandler('org.ofono', modem.path, 'org.ofono.Handsfree', function(name, val) {
 				console.log('[Handsfree] PropertyChanged: ' + name + ' = ' + val);
@@ -27,7 +27,7 @@ function Ofono() {
 		});
 	}
 	
-	var addModemSignalHandler = function(modem, onComplete) {
+	const addModemSignalHandler = function(modem, onComplete) {
 		removeAllHandlersForPropertyChangedSignal('org.ofono', modem.path, 'org.ofono.Modem', function() {
 			addPropertyChangedSignalHandler('org.ofono', modem.path, 'org.ofono.Modem', function(name, val) {
 				console.log('[Modem] PropertyChanged: ' + name + '=' + val);
@@ -53,8 +53,8 @@ function Ofono() {
 		});
 	}
 	
-	var addVoiceCallSignalHandler = function(modem, onComplete) {
-		var addCallAddedHandler = function(onComplete) {
+	const addVoiceCallSignalHandler = function(modem, onComplete) {
+		const addCallAddedHandler = function(onComplete) {
 			removeAllHandlersForSignal('org.ofono', modem.path, 'org.ofono.VoiceCallManager', 'CallAdded', function() {
 				addSignalHandler('org.ofono', modem.path, 'org.ofono.VoiceCallManager', 'CallAdded', function(path, call) {
 					console.log('VoiceCallManager.CallAdded: ' + path);
@@ -71,7 +71,7 @@ function Ofono() {
 				}, onComplete);
 			});
 		}
-		var addCallRemovedHandler = function(onComplete) {
+		const addCallRemovedHandler = function(onComplete) {
 			removeAllHandlersForSignal('org.ofono', modem.path, 'org.ofono.VoiceCallManager', 'CallRemoved', function() {
 				addSignalHandler('org.ofono', modem.path, 'org.ofono.VoiceCallManager', 'CallRemoved', function(path) {
 					console.log('VoiceCallManager.CallRemoved: ' + path);
@@ -95,7 +95,7 @@ function Ofono() {
 		}
 	}
 	
-	var addSignalHandlers = function(modem) {
+	const addSignalHandlers = function(modem) {
 		addModemSignalHandler(modem, function() {
 			if (modem.Online) {
 				addHandsFreeSignalHandler(modem, function() {
@@ -142,7 +142,7 @@ function Ofono() {
 		});
 		removeAllHandlersForSignal('org.ofono', '/', 'org.ofono.Manager', 'ModemAdded', function() {
 			addSignalHandler('org.ofono', '/', 'org.ofono.Manager', 'ModemAdded', function(path, data) {
-				var modem = parseModem(path, data);
+				const modem = parseModem(path, data);
 				self.modems.push(modem);
 				console.log('ModemAdded -> ' + JSON.stringify(modem));
 				addSignalHandlers(modem);
@@ -311,7 +311,7 @@ function parseModems(data) {
 }
 
 function parseModem(path, props) {
-	var modem = props;
+	const modem = props;
 	modem.path = path;
 	modem.bdaddr = parseBdaddr(path);
 	//modem.Siri = hasSiriInterface(modem);

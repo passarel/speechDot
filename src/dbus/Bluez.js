@@ -24,7 +24,7 @@ const adapterConfig = {
 
 function Bluez() {
 	
-	self = this;
+	const self = this;
 	
 	const addMediaTransport = function(meidaTransport, onAdded) {
 		
@@ -48,11 +48,11 @@ function Bluez() {
 					console.log('[Bluez.Device] PropertyChanged: ' + device.path + ', ' + name + '=' + val);
 					device[name] = val;
 					if (name === 'Connected' && val) {
-						self.emit('device_connected' , device.path, );
+						//self.emit('device_connected' , device.path);
 						if (self.pairModeAdapter && device.Adapter === self.pairModeAdapter.path) {
 							setTimeout(function() {
 								setAdapterProperty(self, [device.Adapter], 'Discoverable', false);
-							}, 6000); // allow time for phone name to be said first
+							}, 5000); // allow time for phone name to be said first
 							// i do not love this approach,
 							// but this way we dont need the discoverable state known/manged outside this object.
 							// otherwise we need app.js to explicity control discoverable state
@@ -380,7 +380,7 @@ function removeDevices(self, adapter, onComplete) {
 }
 
 function removeDevice(self, adapter, device, onComplete) {
-	var remove = function() {
+	const remove = function() {
 		for (var i=0; i<adapter.devices.length; i++) {
 			if (adapter.devices[i].path === device.path) {
 				self.devices[device.path] = null;
@@ -411,14 +411,14 @@ function removeDevice(self, adapter, device, onComplete) {
 
 function tryConnectDevices(self, adapterKeys, onComplete) {
 	var i = 0;
-	var nextAdapter = function() {
+	const nextAdapter = function() {
 		if (i < adapterKeys.length) {
 			i++;
 			return self.adapters[adapterKeys[i-1]];
 		}
 		return null;
 	}
-	var tryConnect = function() {
+	const tryConnect = function() {
 		var adapter = nextAdapter();
 		if (adapter) {
 			tryConnectDevice(adapter, tryConnect);
@@ -431,14 +431,14 @@ function tryConnectDevices(self, adapterKeys, onComplete) {
 
 function tryConnectDevice(adapter, onComplete) {
 	var i = 0;
-	var nextDevice = function() {
+	const nextDevice = function() {
 		if (i < adapter.devices.length) {
 			i++;  
 			return adapter.devices[i-1];
 		}
 		return null;
 	}
-	var tryConnect = function() {
+	const tryConnect = function() {
 		var device = nextDevice();
 		if (device) {
 			connectDevice(device, function(err) {
