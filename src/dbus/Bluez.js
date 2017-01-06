@@ -26,8 +26,12 @@ function Bluez() {
 	
 	const self = this;
 	
+	const removeMediaTransport = function(path, onRemoved) {
+		console.log('removeMediaTransport -> ' + path);
+	}
+	
 	const addMediaTransport = function(meidaTransport, onAdded) {
-		
+		console.log('addMediaTransport -> ' + JSON.stringify(meidaTransport));
 	}
 	
 	const addDevice = function(device, onAdded) {
@@ -129,11 +133,11 @@ function Bluez() {
 					device.path = key;
 					addDevice(device);
 				}
-				if (mo[key]['org.bluez.MediaTransport1']) {
-					const mediaTransport = mo[key]['org.bluez.MediaTransport1'];
-					mediaTransport.path = key;
-					addMediaTransport(mediaTransport);
-				}
+//				if (mo[key]['org.bluez.MediaTransport1']) {
+//					const mediaTransport = mo[key]['org.bluez.MediaTransport1'];
+//					mediaTransport.path = key;
+//					addMediaTransport(mediaTransport);
+//				}
 			}
 		});
 		addSignalHandlers(function() {
@@ -205,6 +209,11 @@ function Bluez() {
 						const device = ifaces['org.bluez.Device1'];
 						device.path = path;
 						addDevice(device);
+					}
+					if (ifaces['org.bluez.MediaTransport1']) {
+						const mediaTransport = ifaces['org.bluez.MediaTransport1'];
+						mediaTransport.path = path;
+						addMediaTransport(mediaTransport);
 					}
 				}, onComplete);
 			});
