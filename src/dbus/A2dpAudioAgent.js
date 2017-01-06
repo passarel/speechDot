@@ -25,10 +25,7 @@ function A2dpAudioAgent(adapterId, deviceId) {
 }
 
 function start(self, onComplete) {
-	
-	
 
-	
 	///org/bluez/hci0/dev_40_40_A7_1A_7A_E8
 	
 	/*

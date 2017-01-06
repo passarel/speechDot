@@ -36,7 +36,7 @@ ProcessManager.on('sensory_online', function(sensory) {
 			playAudioResponseAsync('pairing_on.wav');
 	});
 	Bluez.on('pairing_mode_off', function() {
-		playAudioResponseAsync('pairing_off.wav');
+		playAudioResponse('pairing_off.wav'); // not async because can collide with saying phone name...
 	});
 	isReady = true;
 });

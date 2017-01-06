@@ -35,13 +35,11 @@ function Bluez() {
 		if (!self.adapters[device.Adapter]) {
 			self.adapters[device.Adapter] = {devices: [], path: device.Adapter, Discoverable: false};
 		}
-		const devices = self.adapters[device.Adapter].devices;
-		for (var i=0; i<devices.length; i++) {
-			if (devices[i].path === device.path) {
-				console.log('not adding device because device already exists');
-				return;
-			}
+		if (self.devices[device.path]) {
+			console.log('not adding device because device already exists');
+			return;
 		}
+		self.devices[device.path] = device;
 		self.adapters[device.Adapter].devices.push(device);
 		removeAllHandlersForSignal('org.bluez', device.path, 'org.freedesktop.DBus.Properties', 'PropertiesChanged', function() {
 			addSignalHandler('org.bluez', device.path, 'org.freedesktop.DBus.Properties', 'PropertiesChanged', function(ifaceName, props) {
@@ -50,14 +48,16 @@ function Bluez() {
 					console.log('[Bluez.Device] PropertyChanged: ' + device.path + ', ' + name + '=' + val);
 					device[name] = val;
 					if (name === 'Connected' && val) {
-						//self.emit('device_connected' , device.path);
+						self.emit('device_connected' , device.path, );
 						if (self.pairModeAdapter && device.Adapter === self.pairModeAdapter.path) {
 							setTimeout(function() {
 								setAdapterProperty(self, [device.Adapter], 'Discoverable', false);
-							}, 8000); // allow time for phone name to be said first
-							// i do not love this approach, 
-							// but this way we dont need the discoverable state managed outside this object.
-							// otherwise we need app.js to explicity control discoverable state.
+							}, 6000); // allow time for phone name to be said first
+							// i do not love this approach,
+							// but this way we dont need the discoverable state known/manged outside this object.
+							// otherwise we need app.js to explicity control discoverable state
+							// this is not really a big deal as long as app.js uses non async calls for 
+							// saying phone name and saying pairing off...
 						}
 					}
 				});
@@ -193,6 +193,7 @@ function Bluez() {
 	const onBluezDbusOnline = function(managedObjects) {
 		self.pairModeAdapter = null;
 		self.adapters = {};
+		self.devices = {};
 		self.a2dpSinkEndpoints = {};
 		const addInterfacesAddedHandler = function(onComplete) {
 			removeAllHandlersForSignal('org.bluez', '/', 'org.freedesktop.DBus.ObjectManager', 'InterfacesAdded', function() {
@@ -270,7 +271,7 @@ function resetAdapter(self, adapterKeys, onComplete) {
 		const adapter = nextAdapter();
 		if (adapter) {
 			removeAllHandlersForSignal('org.bluez', adapter.path, 'org.freedesktop.DBus.Properties', 'PropertiesChanged', function() {
-				removeDevices(adapter, reset);
+				removeDevices(self, adapter, reset);
 			});
 		} else {
 			configureAdapter(self, adapterKeys, adapterConfig, function() {
@@ -357,7 +358,7 @@ function setAdapterProperty(self, adapterKeys, name, val, onComplete) {
 	setProperty();
 }
 
-function removeDevices(adapter, onComplete) {
+function removeDevices(self, adapter, onComplete) {
 	const nextDevice = function() {
 		if (adapter.devices.length > 0) {
 			return adapter.devices[0];
@@ -368,7 +369,7 @@ function removeDevices(adapter, onComplete) {
 		const device = nextDevice();
 		if (device) {
 			console.log('removing device: ' + device.path);
-			removeDevice(adapter, device, function() {
+			removeDevice(self, adapter, device, function() {
 				removeAllHandlersForSignal('org.bluez', device.path, 'org.freedesktop.DBus.Properties', 'PropertiesChanged', remove);
 			});
 		} else {
@@ -378,10 +379,11 @@ function removeDevices(adapter, onComplete) {
 	remove();
 }
 
-function removeDevice(adapter, device, onComplete) {
+function removeDevice(self, adapter, device, onComplete) {
 	var remove = function() {
 		for (var i=0; i<adapter.devices.length; i++) {
 			if (adapter.devices[i].path === device.path) {
+				self.devices[device.path] = null;
 				adapter.devices.splice(i, 1); //remove device
 				console.log('removed device: ' + device.path);
 				break;
