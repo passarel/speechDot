@@ -89,7 +89,7 @@ function Bluez() {
 				removeAllHandlersForSignal('org.bluez', adapter.path, 'org.freedesktop.DBus.Properties', 'PropertiesChanged', function() {
 					addSignalHandler('org.bluez', adapter.path, 'org.freedesktop.DBus.Properties', 'PropertiesChanged', function(ifaceName, props) {
 						Object.keys(props).forEach(function(name) {
-							var val = props[name];
+							const val = props[name];
 							adapter[name] = val;
 							console.log('[Bluez.Adapter] PropertyChanged: ' + adapter.path + ', ' + name + '=' + val);
 							if (name === 'Discoverable') {
