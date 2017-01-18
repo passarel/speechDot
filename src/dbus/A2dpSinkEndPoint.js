@@ -8,6 +8,9 @@ const bus = dbusUtils.bus;
 const notErr = dbusUtils.notErr;
 const addSignalHandler = dbusUtils.addSignalHandler;
 const removeAllHandlersForSignal = dbusUtils.removeAllHandlersForSignal;
+
+const A2dpAudioAgent = require('./A2dpAudioAgent.js');
+
 const EventEmitter = require('events').EventEmitter;
 const util = require('util');
 util.inherits(A2dpSinkEndPoint, EventEmitter);
@@ -53,7 +56,7 @@ const sbc_config = [255, 255, 2, 64];
 function A2dpSinkEndPoint(adapter) {
 	var self = this;
 	self.adapter = adapter;
-	self.object_path = '/MediaEndpoint/A2DPSink/' + adapter;
+	self.object_path = '/MediaEndpoint/A2DPSink';
 	self.service = dbusUtils.dbus.registerService('system', 'mediaendpoint.a2dpsink.' + adapter);	
 	self.endpoint_props = {};
 	self.endpoint_props.UUID = '0000110b-0000-1000-8000-00805f9b34fb';
@@ -75,42 +78,57 @@ function unregisterEndpoint(self, onComplete) {
 
 function registerEndpoint(self, onComplete) {
 	if (!self.profile) {
-		
 		var obj = self.service.createObject(self.object_path);
 		var iface = obj.createInterface('org.bluez.MediaEndpoint1');
 		self.profile = {obj: obj, iface: iface};
-				
+		
+		
 		iface.addMethod('SetConfiguration', {in: [ DBus.Define(Object), DBus.Define(Object) ]}, function(path, props, callback) {
+			
+			console.log();
 			console.log('>>> A2dpSinkEndPoint.SetConfiguration called');
 			console.log('    path: ' + path);
 			console.log('    props: ' + JSON.stringify(props));
 			console.log();
-			callback();
+			
+			callback(null);
+			
+			/*
+			addSignalHandler('org.bluez', self.mediaTransport.path, 'org.freedesktop.DBus.Properties', 'PropertiesChanged', function(ifaceName, props) {
+				Object.keys(props).forEach(function(name) {
+					const val = props[name];
+					self.mediaTransport[name] = val;
+					console.log('[Bluez.MediaTransport1] PropertyChanged: ' + self.mediaTransport.path + ', ' + name + '=' + val);
+					if (name === 'State') onState(self, val);
+				});
+			});
+			*/
+			
 		});
 		
-		iface.addMethod('SelectConfiguration', {out: [ DBus.Define(Array) ], in: [ DBus.Define(Array) ]}, function(capabilities, callback) {
+		
+		iface.addMethod('SelectConfiguration', {in: [ DBus.Define(Array) ], out: DBus.Define(Array)}, function(capabilities, callback) {
+			console.log();
 			console.log('>>> A2dpSinkEndPoint.SelectConfiguration called');
 			console.log('    capabilities: ' + capabilities);
-			console.log();
+			console.log('    responding with sbc_config: ' + sbc_config);
 			callback(sbc_config);
 		});
-		
 		iface.addMethod('ClearConfiguration', {in: [ DBus.Define(Object) ]}, function(path, callback) {
+			console.log();
 			console.log('>>> A2dpSinkEndPoint.ClearConfiguration called');
 			console.log('    path: ' + path);
 			console.log();
 			callback();
 		});
-		
 		iface.addMethod('Release', {}, function(callback) {
+			console.log();
 			console.log('>> A2dpSinkEndPoint.Release called');
 			console.log();
 			callback();
 		});
-		
 		iface.update();
 	}
-	
 	bus.getInterface('org.bluez', '/org/bluez/' + self.adapter, 'org.bluez.Media1', function(err, iface) {
 		if (notErr(err)) {
 			iface.RegisterEndpoint['timeout'] = 1000;

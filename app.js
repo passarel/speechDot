@@ -8,7 +8,6 @@ const Bluez = require('./src/dbus/Bluez.js');
 const path = require('path');
 const bash_scripts_path = path.resolve(__dirname, 'bash_scripts');
 const ProcessManager = require('./src/ProcessManager.js');
-
 const AlexaAvs = require('./alexa/client/AlexaAvs.js');
 
 const playAudioResponseAsync = audioUtils.playAudioResponseAsync;

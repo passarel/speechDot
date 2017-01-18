@@ -75,6 +75,11 @@ namespace ObjectHandler {
 
 	static void _SendMessageReply(DBusConnection *connection, DBusMessage *message, Local<Value> reply_value, char *signature)
 	{
+
+		printf("GOT HERE -> _SendMessageReply() \n");
+
+		printf("_SendMessageReply.signature -> %s\n", signature);
+
 		Nan::HandleScope scope;
 		DBusMessageIter iter;
 		DBusMessage *reply;
@@ -83,6 +88,7 @@ namespace ObjectHandler {
 		reply = dbus_message_new_method_return(message);
 
 		dbus_message_iter_init_append(reply, &iter);
+
 		if (!Encoder::EncodeObject(reply_value, &iter, signature)) {
 			printf("Failed to encode reply value\n");
 		}

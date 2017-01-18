@@ -147,20 +147,37 @@ function Bluez() {
 				console.log('all bluetooth adapters are now powered on');
 				configureAdapter(self, Object.keys(self.adapters), adapterConfig, function() {
 					console.log('all bluetooth adapters are configured');
-					PairingAgent.stop(function() {
-						PairingAgent.start(function() {
-							console.log('pairing agent started');
-							SerialPortProfile.stop(function() {
-								SerialPortProfile.start(function() {
-									console.log('serialport profile started');
-									//registerA2dpSinkEndpoint(self, Object.keys(self.adapters), function() {
-										//console.log('all a2dp sink enpoints started');
-										self.emit('ready', self.adapters);
+					
+					//registerA2dpSinkEndpoint(self, Object.keys(self.adapters), function() {
+					
+						console.log('all a2dp sink enpoints started');
+						
+						PairingAgent.stop(function() {
+							PairingAgent.start(function() {
+								
+								console.log('pairing agent started');
+								
+								
+								//SerialPortProfile.stop(function() {
+									//SerialPortProfile.start(function() {
+										console.log('serialport profile started');
+										
+										self.emit('ready');
+
+										
+	
+										
 									//});
-								});
+								//});
+								
+								
 							});
 						});
-					});
+					
+					
+					
+					//});
+					
 					//console.log('---------------------------------------------');
 					//console.log(self.adapters);
 					//console.log('---------------------------------------------');
@@ -215,7 +232,7 @@ function Bluez() {
 					if (ifaces['org.bluez.MediaTransport1']) {
 						const mediaTransport = ifaces['org.bluez.MediaTransport1'];
 						mediaTransport.path = path;
-						addMediaTransport(mediaTransport);
+						//addMediaTransport(mediaTransport);
 					}
 				}, onComplete);
 			});
@@ -239,7 +256,10 @@ function Bluez() {
 	ProcessManager.on('pulse_online', function(sensory) {
 		// pulse needs to be online to say when a device is connected
 		// otherwise its a race condition
-		tryConnectDevices(self, Object.keys(self.adapters));
+		
+		//setTimeout(function() {
+			//tryConnectDevices(self, Object.keys(self.adapters));
+		//}, 2000);
 	});
 }
 

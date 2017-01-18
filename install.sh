@@ -43,7 +43,9 @@ tst sudo rm -rf /etc/asound.conf
 
 tst sudo rm -rf /etc/pulse/
 tst sudo rm -rf /etc/bluetooth/
-tst sudo rm -rf /etc/startup.sh
+
+#tst sudo rm -rf /etc/startup.sh
+
 tst sudo rm -rf /etc/rc.local
 tst sudo rm -rf /etc/machine-info
 tst sudo rm -rf ~/logs
@@ -54,7 +56,9 @@ tst sudo cp -r ./install/pulse/* /etc/pulse
 tst sudo cp ./install/asound.conf /etc/
 
 tst sudo cp -r ./install/bluetooth /etc/
-tst sudo cp ./install/startup.sh /etc/
+
+#tst sudo cp ./install/startup.sh /etc/
+
 tst sudo cp ./install/rc.local /etc/
 tst sudo cp ./install/machine-info /etc/
 

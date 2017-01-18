@@ -20,7 +20,8 @@
 					'cflags': [
 						'-std=gnu++0x',
 						'<!@(pkg-config --cflags sbc)',
-						'<!@(pkg-config --cflags alsa)'
+						'<!@(pkg-config --cflags alsa)',
+						'<!@(pkg-config --cflags dbus-1)'
 					],
 					'ldflags': [
 						'<!@(pkg-config  --libs-only-L --libs-only-other sbc)'
@@ -48,13 +49,16 @@
 					'cflags': [
 						'-std=gnu++0x',
 						'<!@(pkg-config --cflags sbc)',
-						'<!@(pkg-config --cflags alsa)'
+						'<!@(pkg-config --cflags alsa)',
+						'<!@(pkg-config --cflags dbus-1)'
 					],
 					'ldflags': [
-						'<!@(pkg-config  --libs-only-L --libs-only-other sbc)'
+						'<!@(pkg-config  --libs-only-L --libs-only-other sbc)',
+						'<!@(pkg-config  --libs-only-L --libs-only-other dbus-1)'
 					],
 					'libraries': [
-						'<!@(pkg-config  --libs-only-l --libs-only-other sbc)'
+						'<!@(pkg-config  --libs-only-l --libs-only-other sbc)',
+						'<!@(pkg-config  --libs-only-L --libs-only-other dbus-1)'
 					]
 				}]
 			]

@@ -23,6 +23,8 @@ CFLAGS_Debug := \
 	-Wno-unused-parameter \
 	-std=gnu++0x \
 	-I/usr/include/alsa \
+	-I/usr/include/dbus-1.0 \
+	-I/usr/lib/arm-linux-gnueabihf/dbus-1.0/include \
 	-g \
 	-O0
 
@@ -61,6 +63,8 @@ CFLAGS_Release := \
 	-Wno-unused-parameter \
 	-std=gnu++0x \
 	-I/usr/include/alsa \
+	-I/usr/include/dbus-1.0 \
+	-I/usr/lib/arm-linux-gnueabihf/dbus-1.0/include \
 	-O3 \
 	-fno-omit-frame-pointer
 

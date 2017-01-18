@@ -1,4 +1,4 @@
-cmd_Release/obj.target/a2dp/src/a2dp.o := g++ '-DNODE_GYP_MODULE_NAME=a2dp' '-DUSING_UV_SHARED=1' '-DUSING_V8_SHARED=1' '-DV8_DEPRECATION_WARNINGS=1' '-D_LARGEFILE_SOURCE' '-D_FILE_OFFSET_BITS=64' '-DLIB_EXPAT=expat' '-DBUILDING_NODE_EXTENSION' -I/home/pi/.node-gyp/7.1.0/include/node -I/home/pi/.node-gyp/7.1.0/src -I/home/pi/.node-gyp/7.1.0/deps/uv/include -I/home/pi/.node-gyp/7.1.0/deps/v8/include -I../node_modules/nan  -fPIC -pthread -Wall -Wextra -Wno-unused-parameter -std=gnu++0x -I/usr/include/alsa -O3 -fno-omit-frame-pointer -fno-rtti -fno-exceptions -std=gnu++0x -MMD -MF ./Release/.deps/Release/obj.target/a2dp/src/a2dp.o.d.raw   -c -o Release/obj.target/a2dp/src/a2dp.o ../src/a2dp.cc
+cmd_Release/obj.target/a2dp/src/a2dp.o := g++ '-DNODE_GYP_MODULE_NAME=a2dp' '-DUSING_UV_SHARED=1' '-DUSING_V8_SHARED=1' '-DV8_DEPRECATION_WARNINGS=1' '-D_LARGEFILE_SOURCE' '-D_FILE_OFFSET_BITS=64' '-DLIB_EXPAT=expat' '-DBUILDING_NODE_EXTENSION' -I/home/pi/.node-gyp/7.1.0/include/node -I/home/pi/.node-gyp/7.1.0/src -I/home/pi/.node-gyp/7.1.0/deps/uv/include -I/home/pi/.node-gyp/7.1.0/deps/v8/include -I../node_modules/nan  -fPIC -pthread -Wall -Wextra -Wno-unused-parameter -std=gnu++0x -I/usr/include/alsa -I/usr/include/dbus-1.0 -I/usr/lib/arm-linux-gnueabihf/dbus-1.0/include -O3 -fno-omit-frame-pointer -fno-rtti -fno-exceptions -std=gnu++0x -MMD -MF ./Release/.deps/Release/obj.target/a2dp/src/a2dp.o.d.raw   -c -o Release/obj.target/a2dp/src/a2dp.o ../src/a2dp.cc
 Release/obj.target/a2dp/src/a2dp.o: ../src/a2dp.cc \
  /home/pi/.node-gyp/7.1.0/include/node/v8.h \
  /home/pi/.node-gyp/7.1.0/include/node/v8-version.h \
@@ -26,7 +26,25 @@ Release/obj.target/a2dp/src/a2dp.o: ../src/a2dp.cc \
  ../node_modules/nan/nan_implementation_12_inl.h \
  ../node_modules/nan/nan_persistent_12_inl.h \
  ../node_modules/nan/nan_weak.h ../node_modules/nan/nan_object_wrap.h \
- ../node_modules/nan/nan_typedarray_contents.h
+ ../node_modules/nan/nan_typedarray_contents.h \
+ /usr/include/dbus-1.0/dbus/dbus.h \
+ /usr/lib/arm-linux-gnueabihf/dbus-1.0/include/dbus/dbus-arch-deps.h \
+ /usr/include/dbus-1.0/dbus/dbus-macros.h \
+ /usr/include/dbus-1.0/dbus/dbus-address.h \
+ /usr/include/dbus-1.0/dbus/dbus-types.h \
+ /usr/include/dbus-1.0/dbus/dbus-errors.h \
+ /usr/include/dbus-1.0/dbus/dbus-protocol.h \
+ /usr/include/dbus-1.0/dbus/dbus-bus.h \
+ /usr/include/dbus-1.0/dbus/dbus-connection.h \
+ /usr/include/dbus-1.0/dbus/dbus-memory.h \
+ /usr/include/dbus-1.0/dbus/dbus-message.h \
+ /usr/include/dbus-1.0/dbus/dbus-shared.h \
+ /usr/include/dbus-1.0/dbus/dbus-misc.h \
+ /usr/include/dbus-1.0/dbus/dbus-pending-call.h \
+ /usr/include/dbus-1.0/dbus/dbus-server.h \
+ /usr/include/dbus-1.0/dbus/dbus-signature.h \
+ /usr/include/dbus-1.0/dbus/dbus-syntax.h \
+ /usr/include/dbus-1.0/dbus/dbus-threads.h ../src/a2dp-codecs.h
 ../src/a2dp.cc:
 /home/pi/.node-gyp/7.1.0/include/node/v8.h:
 /home/pi/.node-gyp/7.1.0/include/node/v8-version.h:
@@ -56,3 +74,22 @@ Release/obj.target/a2dp/src/a2dp.o: ../src/a2dp.cc \
 ../node_modules/nan/nan_weak.h:
 ../node_modules/nan/nan_object_wrap.h:
 ../node_modules/nan/nan_typedarray_contents.h:
+/usr/include/dbus-1.0/dbus/dbus.h:
+/usr/lib/arm-linux-gnueabihf/dbus-1.0/include/dbus/dbus-arch-deps.h:
+/usr/include/dbus-1.0/dbus/dbus-macros.h:
+/usr/include/dbus-1.0/dbus/dbus-address.h:
+/usr/include/dbus-1.0/dbus/dbus-types.h:
+/usr/include/dbus-1.0/dbus/dbus-errors.h:
+/usr/include/dbus-1.0/dbus/dbus-protocol.h:
+/usr/include/dbus-1.0/dbus/dbus-bus.h:
+/usr/include/dbus-1.0/dbus/dbus-connection.h:
+/usr/include/dbus-1.0/dbus/dbus-memory.h:
+/usr/include/dbus-1.0/dbus/dbus-message.h:
+/usr/include/dbus-1.0/dbus/dbus-shared.h:
+/usr/include/dbus-1.0/dbus/dbus-misc.h:
+/usr/include/dbus-1.0/dbus/dbus-pending-call.h:
+/usr/include/dbus-1.0/dbus/dbus-server.h:
+/usr/include/dbus-1.0/dbus/dbus-signature.h:
+/usr/include/dbus-1.0/dbus/dbus-syntax.h:
+/usr/include/dbus-1.0/dbus/dbus-threads.h:
+../src/a2dp-codecs.h:
