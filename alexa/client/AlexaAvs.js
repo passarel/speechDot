@@ -250,9 +250,8 @@ function startRecording(self) {
     });
 
     child.on('exit', function (c) {
-		console.log('arecord err: ' + c);
-		if (c !== 0 && c !== 1) {
-		    throw c;
+		if (c) {
+			console.log('arecord err: ' + c);
 		}
 		soundMeter.removeAllListeners('speech_begin');
 		soundMeter.removeAllListeners('speech_end');
@@ -261,7 +260,10 @@ function startRecording(self) {
 		execSync('aplay ' + stop_rec_file + ' 2>&1 >/dev/null');
 		self.emit('audio_rec_ready', self);
     });
-    
+    child.on('error', function (c) {
+        console.log('arecord failed with ' + c);
+    });
+
     var isSpeechStarted = false;
     const soundMeter = new SoundMeter();
 
@@ -271,7 +273,7 @@ function startRecording(self) {
     });
     
     soundMeter.on('speech_end', function () {
-    	child.kill(); // gracefully terminate arecord by sending out SIGTERM
+        child.kill('SIGKILL');
     	isRecording = false;
     });
     
@@ -285,7 +287,7 @@ function startRecording(self) {
     //max 6.5sec window
     setTimeout(function() {
     	if (isRecording) {
-        	child.kill(); // gracefully terminate arecord by sending out SIGTERM
+                child.kill('SIGKILL');
         	isRecording = false;
     	}
     }, 6500);
