@@ -115,6 +115,9 @@ namespace ObjectHandler {
 
 		// Register object path
 		char *object_path = strdup(*Nan::Utf8String(info[1]));
+
+		printf("!! ---- GOT HERE ---- RegisterObjectPath -> %s \n", object_path);
+
 		dbus_bool_t ret = dbus_connection_register_object_path(bus->connection,
 			object_path,
 			&vtable,

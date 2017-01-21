@@ -17,18 +17,6 @@ namespace a2dp {
 	using namespace v8;
 	using namespace std;
 
-	/*
-	typedef struct {
-		uint8_t channel_mode:4;
-		uint8_t frequency:4;
-		uint8_t allocation_method:2;
-		uint8_t subbands:2;
-		uint8_t block_length:4;
-		uint8_t min_bitpool;
-		uint8_t max_bitpool;
-	} __attribute__ ((packed)) a2dp_sbc_t;
-	*/
-
 	const char *A2DP_SINK_ENDPOINT = "/MediaEndpoint/A2DPSink";
 	const char *A2DP_SINK_UUID = "0000110b-0000-1000-8000-00805f9b34fb";
 	const char *BLUEZ_SERVICE = "org.bluez";
@@ -164,53 +152,20 @@ namespace a2dp {
 	}
 
 	void register_endpoint_reply(DBusPendingCall *pending, void *endpoint) {
-
-		printf("register_endpoint_reply -> endpoint: %s \n", endpoint);
-
+		printf("register_endpoint_reply -> endpoint: %s \n", (char*) endpoint);
 		DBusMessage *r;
 		r = dbus_pending_call_steal_reply(pending);
-
-		/*
 	    if (dbus_message_get_type(r) == DBUS_MESSAGE_TYPE_ERROR) {
 	        printf("%s.RegisterEndpoint() failed: %s: %s", BLUEZ_MEDIA_INTERFACE, dbus_message_get_error_name(r),
-	                     pa_dbus_get_error_message(r));
+	                     utils_dbus_get_error_message(r));
 	        goto finish;
 	    }
-	    */
-
-
-		/*
-
-	    pa_dbus_pending *p;
-	    pa_bluetooth_discovery *y;
-	    char *endpoint;
-
-	    pa_assert(pending);
-	    pa_assert_se(p = userdata);
-	    pa_assert_se(y = p->context_data);
-	    pa_assert_se(endpoint = p->call_data);
-	    pa_assert_se(r = dbus_pending_call_steal_reply(pending));
-
-	    if (dbus_message_is_error(r, BLUEZ_ERROR_NOT_SUPPORTED)) {
-	        pa_log_info("Couldn't register endpoint %s because it is disabled in BlueZ", endpoint);
-	        goto finish;
-	    }
-
-	    if (dbus_message_get_type(r) == DBUS_MESSAGE_TYPE_ERROR) {
-	        pa_log_error(BLUEZ_MEDIA_INTERFACE ".RegisterEndpoint() failed: %s: %s", dbus_message_get_error_name(r),
-	                     pa_dbus_get_error_message(r));
-	        goto finish;
-	    }
-		*/
-
-
 		finish:
 			dbus_message_unref(r);
 			free(endpoint);
-
 	}
 
-	void register_endpoint(DBusConnection *connection, const char *path) {
+	void register_sink_endpoint(DBusConnection *connection, const char *path) {
 
 	    DBusMessage *m;
 	    DBusMessageIter i, d;
@@ -240,6 +195,45 @@ namespace a2dp {
         strcpy(endpoint, A2DP_SINK_ENDPOINT);
         send_and_add_to_pending(connection, m, register_endpoint_reply, endpoint);
 	}
+
+	/*
+	DBusHandlerResult endpoint_handler(DBusConnection *c, DBusMessage *m, void *userdata) {
+
+
+	    return DBUS_HANDLER_RESULT_HANDLED;
+	}
+	*/
+
+	/*
+	void endpoint_sink_init() {
+
+		DBusObjectPathVTable vtable_endpoint;
+		vtable_endpoint.message_function = endpoint_handler;
+
+        pa_assert_se(dbus_connection_register_object_path(pa_dbus_connection_get(y->connection), A2DP_SOURCE_ENDPOINT,
+                                                          &vtable_endpoint, y));
+
+	    switch(profile) {
+
+	        case PA_BLUETOOTH_PROFILE_A2DP_SINK:
+	            pa_assert_se(dbus_connection_register_object_path(
+	            		pa_dbus_connection_get(y->connection),
+						A2DP_SOURCE_ENDPOINT,
+	                    &vtable_endpoint, y));
+	            break;
+
+	        case PA_BLUETOOTH_PROFILE_A2DP_SOURCE:
+	            pa_assert_se(dbus_connection_register_object_path(pa_dbus_connection_get(y->connection), A2DP_SINK_ENDPOINT,
+	                                                              &vtable_endpoint, y));
+	            break;
+
+	        default:
+	            pa_assert_not_reached();
+	            break;
+
+	    }
+	}
+	*/
 
 	static void init(Local<Object> exports) {
 

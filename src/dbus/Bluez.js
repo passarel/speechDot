@@ -7,8 +7,7 @@ const bus = dbusUtils.bus;
 const notErr = dbusUtils.notErr;
 const addSignalHandler = dbusUtils.addSignalHandler;
 const removeAllHandlersForSignal = dbusUtils.removeAllHandlersForSignal;
-const A2dpSinkEndPoint = require('./A2dpSinkEndPoint.js');
-const A2dpAudioAgent = require('./A2dpAudioAgent.js');
+const A2dpEndPoint = require('./A2dpEndPoint.js');
 
 const EventEmitter = require('events').EventEmitter;
 const util = require('util');
@@ -148,35 +147,36 @@ function Bluez() {
 				configureAdapter(self, Object.keys(self.adapters), adapterConfig, function() {
 					console.log('all bluetooth adapters are configured');
 					
-					//registerA2dpSinkEndpoint(self, Object.keys(self.adapters), function() {
+					registerA2dpEndpoint(self, 'source', Object.keys(self.adapters), function() {
 					
-						console.log('all a2dp sink enpoints started');
+						registerA2dpEndpoint(self, 'sink', Object.keys(self.adapters), function() {
 						
-						PairingAgent.stop(function() {
-							PairingAgent.start(function() {
-								
-								console.log('pairing agent started');
-								
-								
-								//SerialPortProfile.stop(function() {
-									//SerialPortProfile.start(function() {
-										console.log('serialport profile started');
-										
-										self.emit('ready');
 
-										
+							PairingAgent.stop(function() {
+								PairingAgent.start(function() {
+									
+									console.log('pairing agent started');
+									
+									
+									//SerialPortProfile.stop(function() {
+										//SerialPortProfile.start(function() {
+											//console.log('serialport profile started');
+											
+											self.emit('ready');
 	
-										
+											
+		
+											
+										//});
 									//});
-								//});
-								
-								
+									
+									
+								});
 							});
+
 						});
 					
-					
-					
-					//});
+					});
 					
 					//console.log('---------------------------------------------');
 					//console.log(self.adapters);
@@ -217,7 +217,6 @@ function Bluez() {
 		self.pairModeAdapter = null;
 		self.adapters = {};
 		self.devices = {};
-		self.a2dpSinkEndpoints = {};
 		const addInterfacesAddedHandler = function(onComplete) {
 			removeAllHandlersForSignal('org.bluez', '/', 'org.freedesktop.DBus.ObjectManager', 'InterfacesAdded', function() {
 				addSignalHandler('org.bluez', '/', 'org.freedesktop.DBus.ObjectManager', 'InterfacesAdded', function(path, ifaces) {
@@ -334,16 +333,15 @@ function configureAdapter(self, adapterKeys, options, onComplete) {
 	config();
 }
 
-function getA2dpSinkEndPoint(self, adapter) {
-	var a2dpSinkEndPoint = self.a2dpSinkEndpoints[adapter];
-	if (!a2dpSinkEndPoint) {
-		a2dpSinkEndPoint = new A2dpSinkEndPoint(adapter);
-		self.a2dpSinkEndpoints[adapter] = a2dpSinkEndPoint;
+function getA2dpEndpoint(type) {
+	if (type === 'sink') {
+		return A2dpEndPoint.sink;
+	} else {
+		return A2dpEndPoint.source;
 	}
-	return a2dpSinkEndPoint;
 }
 
-function registerA2dpSinkEndpoint(self, adapterKeys, onComplete) {
+function registerA2dpEndpoint(self, type, adapterKeys, onComplete) {
 	var i = 0;
 	const nextAdapter = function() {
 		if (i < adapterKeys.length) {
@@ -355,7 +353,16 @@ function registerA2dpSinkEndpoint(self, adapterKeys, onComplete) {
 	const registerEndpoint = function() {
 		const adapter = nextAdapter();
 		if (adapter) {
-			getA2dpSinkEndPoint(self, adapter.path.replace('/org/bluez/', '')).start(registerEndpoint);
+			
+			getA2dpEndpoint(type).register(adapter.path.replace('/org/bluez/', ''), registerEndpoint);
+			
+			/*
+			if (type === 'sink') {
+				A2dpSinkEndpoint.register(adapter.path.replace('/org/bluez/', ''), registerEndpoint);
+			} else {
+				A2dpSourceEndpoint.register(adapter.path.replace('/org/bluez/', ''), registerEndpoint);
+			}
+			*/
 		} else {
 			if (onComplete) onComplete();
 		}
