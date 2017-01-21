@@ -147,9 +147,9 @@ function Bluez() {
 				configureAdapter(self, Object.keys(self.adapters), adapterConfig, function() {
 					console.log('all bluetooth adapters are configured');
 					
-					registerA2dpEndpoint(self, 'source', Object.keys(self.adapters), function() {
+					//registerA2dpEndpoint(self, 'source', Object.keys(self.adapters), function() {
 					
-						registerA2dpEndpoint(self, 'sink', Object.keys(self.adapters), function() {
+						//registerA2dpEndpoint(self, 'sink', Object.keys(self.adapters), function() {
 						
 
 							PairingAgent.stop(function() {
@@ -174,9 +174,9 @@ function Bluez() {
 								});
 							});
 
-						});
+						//});
 					
-					});
+					//});
 					
 					//console.log('---------------------------------------------');
 					//console.log(self.adapters);

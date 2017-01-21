@@ -165,17 +165,17 @@ namespace a2dp {
 			free(endpoint);
 	}
 
-	void register_sink_endpoint(DBusConnection *connection, const char *path) {
+	void register_endpoint(DBusConnection *connection, const char *adapter_path, const char *endpoint, const char *uuid) {
 
 	    DBusMessage *m;
 	    DBusMessageIter i, d;
 	    uint8_t codec = 0;
 
-	    m = dbus_message_new_method_call(BLUEZ_SERVICE, path, BLUEZ_MEDIA_INTERFACE, "RegisterEndpoint");
+	    m = dbus_message_new_method_call(BLUEZ_SERVICE, adapter_path, BLUEZ_MEDIA_INTERFACE, "RegisterEndpoint");
 	    dbus_message_iter_init_append(m, &i);
-	    dbus_message_iter_append_basic(&i, DBUS_TYPE_OBJECT_PATH, &A2DP_SINK_ENDPOINT);
+	    dbus_message_iter_append_basic(&i, DBUS_TYPE_OBJECT_PATH, &endpoint);
 	    dbus_message_iter_open_container(&i, DBUS_TYPE_ARRAY, "{sv}", &d);
-	    utils_dbus_append_basic_variant_dict_entry(&d, "UUID", DBUS_TYPE_STRING, &A2DP_SINK_UUID);
+	    utils_dbus_append_basic_variant_dict_entry(&d, "UUID", DBUS_TYPE_STRING, &uuid);
 	    utils_dbus_append_basic_variant_dict_entry(&d, "Codec", DBUS_TYPE_BYTE, &codec);
 
         a2dp_sbc_t capabilities;
@@ -191,9 +191,10 @@ namespace a2dp {
 
         utils_dbus_append_basic_array_variant_dict_entry(&d, "Capabilities", DBUS_TYPE_BYTE, &capabilities, sizeof(capabilities));
         dbus_message_iter_close_container(&i, &d);
-        char *endpoint = (char *) malloc(strlen(A2DP_SINK_ENDPOINT)+1);
-        strcpy(endpoint, A2DP_SINK_ENDPOINT);
-        send_and_add_to_pending(connection, m, register_endpoint_reply, endpoint);
+
+        char *call_data = (char *) malloc(strlen(endpoint)+1);
+        strcpy(call_data, endpoint);
+        send_and_add_to_pending(connection, m, register_endpoint_reply, call_data);
 	}
 
 	/*
