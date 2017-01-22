@@ -197,13 +197,11 @@ namespace a2dp {
         send_and_add_to_pending(connection, m, register_endpoint_reply, call_data);
 	}
 
-	/*
 	DBusHandlerResult endpoint_handler(DBusConnection *c, DBusMessage *m, void *userdata) {
 
 
 	    return DBUS_HANDLER_RESULT_HANDLED;
 	}
-	*/
 
 	/*
 	void endpoint_sink_init() {
