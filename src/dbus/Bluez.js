@@ -36,7 +36,7 @@ function Bluez() {
 	}
 	
 	const addDevice = function(device, onAdded) {
-		console.log('[Bluez.js] attempting to add device...')
+		console.log('[Bluez.js] attempting to add device...');
 		if (!self.adapters[device.Adapter]) {
 			self.adapters[device.Adapter] = {devices: [], path: device.Adapter, Discoverable: false};
 		}
@@ -257,7 +257,7 @@ function Bluez() {
 		// otherwise its a race condition
 		
 		//setTimeout(function() {
-			//tryConnectDevices(self, Object.keys(self.adapters));
+			tryConnectDevices(self, Object.keys(self.adapters));
 		//}, 2000);
 	});
 }

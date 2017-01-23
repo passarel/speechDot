@@ -21,6 +21,32 @@ namespace a2dp {
 	const char *A2DP_SINK_UUID = "0000110b-0000-1000-8000-00805f9b34fb";
 	const char *BLUEZ_SERVICE = "org.bluez";
 	const char *BLUEZ_MEDIA_INTERFACE = "org.bluez.Media1";
+	const char *BLUEZ_MEDIA_ENDPOINT_INTERFACE = "org.bluez.MediaEndpoint1";
+
+	#define ENDPOINT_INTROSPECT_XML                                         \
+		DBUS_INTROSPECT_1_0_XML_DOCTYPE_DECL_NODE                           \
+		"<node>"                                                            \
+		" <interface name=\"org.bluez.MediaEndpoint1\">"          			\
+		"  <method name=\"SetConfiguration\">"                              \
+		"   <arg name=\"transport\" direction=\"in\" type=\"o\"/>"          \
+		"   <arg name=\"properties\" direction=\"in\" type=\"ay\"/>"        \
+		"  </method>"                                                       \
+		"  <method name=\"SelectConfiguration\">"                           \
+		"   <arg name=\"capabilities\" direction=\"in\" type=\"ay\"/>"      \
+		"   <arg name=\"configuration\" direction=\"out\" type=\"ay\"/>"    \
+		"  </method>"                                                       \
+		"  <method name=\"ClearConfiguration\">"                            \
+		"   <arg name=\"transport\" direction=\"in\" type=\"o\"/>"          \
+		"  </method>"                                                       \
+		"  <method name=\"Release\">"                                       \
+		"  </method>"                                                       \
+		" </interface>"                                                     \
+		" <interface name=\"org.freedesktop.DBus.Introspectable\">"         \
+		"  <method name=\"Introspect\">"                                    \
+		"   <arg name=\"data\" type=\"s\" direction=\"out\"/>"              \
+		"  </method>"                                                       \
+		" </interface>"                                                     \
+		"</node>"
 
 	NAN_METHOD(SbcConfigFromByteArray) {
 		unsigned char *buf = (unsigned char *) node::Buffer::Data(info[0].As<v8::Object>());
@@ -112,7 +138,7 @@ namespace a2dp {
 	void utils_dbus_append_basic_array_variant(DBusMessageIter *iter, int item_type, const void *array, unsigned n) {
 	    DBusMessageIter variant_iter;
 	    char array_signature[2];
-	    sprintf(array_signature, "a%c", *signature_from_basic_type(item_type));
+	    sprintf(array_signature, "array_signature: a%c \n", *signature_from_basic_type(item_type));
 	    dbus_message_iter_open_container(iter, DBUS_TYPE_VARIANT, array_signature, &variant_iter);
 	    utils_dbus_append_basic_array(&variant_iter, item_type, array, n);
 	    dbus_message_iter_close_container(iter, &variant_iter);
@@ -156,7 +182,7 @@ namespace a2dp {
 		DBusMessage *r;
 		r = dbus_pending_call_steal_reply(pending);
 	    if (dbus_message_get_type(r) == DBUS_MESSAGE_TYPE_ERROR) {
-	        printf("%s.RegisterEndpoint() failed: %s: %s", BLUEZ_MEDIA_INTERFACE, dbus_message_get_error_name(r),
+	        printf("%s.RegisterEndpoint() failed: %s: %s \n", BLUEZ_MEDIA_INTERFACE, dbus_message_get_error_name(r),
 	                     utils_dbus_get_error_message(r));
 	        goto finish;
 	    }
@@ -197,42 +223,127 @@ namespace a2dp {
         send_and_add_to_pending(connection, m, register_endpoint_reply, call_data);
 	}
 
+
+	DBusMessage *endpoint_set_configuration(DBusConnection *conn, DBusMessage *m, void *userdata) {
+		DBusMessage *r;
+
+		return r;
+	}
+
+	DBusMessage *endpoint_select_configuration(DBusConnection *conn, DBusMessage *m, void *userdata) {
+	    a2dp_sbc_t *cap, config;
+	    uint8_t *pconf = (uint8_t *) &config;
+	    int i, size;
+	    DBusMessage *r;
+	    DBusError err;
+
+	    dbus_error_init(&err);
+
+	    if (!dbus_message_get_args(m, &err, DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &cap, &size, DBUS_TYPE_INVALID)) {
+	        printf("Endpoint SelectConfiguration(): %s \n", err.message);
+	        dbus_error_free(&err);
+	        goto fail;
+	    }
+
+	    if (size != sizeof(config)) {
+	        printf("Capabilities array has invalid size \n");
+	        goto fail;
+	    }
+
+//	    I: [pulseaudio] bluez5-util.c:  CONFIG.MIN_BITPOOL = 2
+//	    I: [pulseaudio] bluez5-util.c: CONFIG.MAX_BITPOOL = 53
+//	    I: [pulseaudio] bluez5-util.c: CONFIG.SUBBANDS = 1
+//	    I: [pulseaudio] bluez5-util.c: CONFIG.FREQUENCY = 2
+//	    I: [pulseaudio] bluez5-util.c: CONFIG.CHANNEL_MODE = 1
+//	    I: [pulseaudio] bluez5-util.c: CONFIG.BLOCK_LENGTH = 1
+//	    I: [pulseaudio] bluez5-util.c: CONFIG.ALLOCATION_METHOD = 1
+
+	    config.min_bitpool = 2;
+	    config.max_bitpool = 53;
+	    config.subbands = 1;
+	    config.frequency = 2;
+	    config.channel_mode = 1;
+	    config.block_length = 1;
+	    config.allocation_method = 1;
+
+	    r = dbus_message_new_method_return(m);
+	    dbus_message_append_args(r, DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &pconf, size, DBUS_TYPE_INVALID);
+
+	    return r;
+
+	    fail:
+	        r = dbus_message_new_error(m, "org.bluez.Error.InvalidArguments", "Unable to select configuration");
+	        return r;
+	}
+
+	DBusMessage *endpoint_clear_configuration(DBusConnection *conn, DBusMessage *m, void *userdata) {
+	    DBusMessage *r;
+	    DBusError err;
+	    const char *path;
+	    dbus_error_init(&err);
+
+	    if (!dbus_message_get_args(m, &err, DBUS_TYPE_OBJECT_PATH, &path, DBUS_TYPE_INVALID)) {
+	        printf("Endpoint ClearConfiguration(): %s \n", err.message);
+	        dbus_error_free(&err);
+	        goto fail;
+	    }
+
+	    r = dbus_message_new_method_return(m);
+		return r;
+
+		fail:
+		    r = dbus_message_new_error(m, "org.bluez.Error.InvalidArguments", "Unable to clear configuration");
+		    return r;
+	}
+
+	DBusMessage *endpoint_release(DBusConnection *conn, DBusMessage *m, void *userdata) {
+	    DBusMessage *r;
+	    printf("!! GOT HERE ----- endpoint_release() ----- \n");
+	    r = dbus_message_new_error(m, "org.bluez.MediaEndpoint1.Error.NotImplemented", "Method not implemented");
+	    return r;
+	}
+
 	DBusHandlerResult endpoint_handler(DBusConnection *c, DBusMessage *m, void *userdata) {
+	    DBusMessage *r = NULL;
+	    const char *path, *interface, *member;
 
+	    path = dbus_message_get_path(m);
+	    interface = dbus_message_get_interface(m);
+	    member = dbus_message_get_member(m);
+	    printf("endpoint_handler: path=%s, interface=%s, member=%s \n", path, interface, member);
 
+	    //TODO: Check path isvalid...
+	    //if (path != ??) return DBUS_HANDLER_RESULT_NOT_YET_HANDLED
+
+	    if (dbus_message_is_method_call(m, "org.freedesktop.DBus.Introspectable", "Introspect")) {
+	        const char *xml = ENDPOINT_INTROSPECT_XML;
+
+	        r = dbus_message_new_method_return(m);
+	        dbus_message_append_args(r, DBUS_TYPE_STRING, &xml, DBUS_TYPE_INVALID);
+
+	    } else if (dbus_message_is_method_call(m, BLUEZ_MEDIA_ENDPOINT_INTERFACE, "SetConfiguration"))
+	        r = endpoint_set_configuration(c, m, userdata);
+	    else if (dbus_message_is_method_call(m, BLUEZ_MEDIA_ENDPOINT_INTERFACE, "SelectConfiguration"))
+	        r = endpoint_select_configuration(c, m, userdata);
+	    else if (dbus_message_is_method_call(m, BLUEZ_MEDIA_ENDPOINT_INTERFACE, "ClearConfiguration"))
+	        r = endpoint_clear_configuration(c, m, userdata);
+	    else if (dbus_message_is_method_call(m, BLUEZ_MEDIA_ENDPOINT_INTERFACE, "Release"))
+	        r = endpoint_release(c, m, userdata);
+	    else
+	        return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+
+	    if (r) {
+	        dbus_connection_send(c, r, NULL);
+	        dbus_message_unref(r);
+	    }
 	    return DBUS_HANDLER_RESULT_HANDLED;
 	}
 
-	/*
-	void endpoint_sink_init() {
-
+	void endpoint_init(DBusConnection *connection, const char *endpoint) {
 		DBusObjectPathVTable vtable_endpoint;
 		vtable_endpoint.message_function = endpoint_handler;
-
-        pa_assert_se(dbus_connection_register_object_path(pa_dbus_connection_get(y->connection), A2DP_SOURCE_ENDPOINT,
-                                                          &vtable_endpoint, y));
-
-	    switch(profile) {
-
-	        case PA_BLUETOOTH_PROFILE_A2DP_SINK:
-	            pa_assert_se(dbus_connection_register_object_path(
-	            		pa_dbus_connection_get(y->connection),
-						A2DP_SOURCE_ENDPOINT,
-	                    &vtable_endpoint, y));
-	            break;
-
-	        case PA_BLUETOOTH_PROFILE_A2DP_SOURCE:
-	            pa_assert_se(dbus_connection_register_object_path(pa_dbus_connection_get(y->connection), A2DP_SINK_ENDPOINT,
-	                                                              &vtable_endpoint, y));
-	            break;
-
-	        default:
-	            pa_assert_not_reached();
-	            break;
-
-	    }
+        dbus_connection_register_object_path(connection, endpoint, &vtable_endpoint, NULL);
 	}
-	*/
 
 	static void init(Local<Object> exports) {
 

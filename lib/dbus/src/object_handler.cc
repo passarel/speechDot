@@ -50,8 +50,9 @@ namespace ObjectHandler {
 		};
 
 		// Keep message live for reply
-		if (!dbus_message_get_no_reply(message))
+		if (!dbus_message_get_no_reply(message)) {
 			dbus_message_ref(message);
+		}
 
 		// Invoke
 		Nan::MakeCallback(Nan::GetCurrentContext()->Global(), Nan::New(handler), 7, info);
