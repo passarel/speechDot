@@ -223,11 +223,47 @@ namespace a2dp {
         send_and_add_to_pending(connection, m, register_endpoint_reply, call_data);
 	}
 
+	void register_sink_endpoint(DBusConnection *connection, const char *adapter_path) {
+		register_endpoint(connection, adapter_path, A2DP_SINK_ENDPOINT, A2DP_SINK_UUID);
+	}
 
 	DBusMessage *endpoint_set_configuration(DBusConnection *conn, DBusMessage *m, void *userdata) {
 		DBusMessage *r;
+		DBusMessageIter args, props;
+		const char *sender, *path, *endpoint_path, *dev_path = NULL, *uuid = NULL;
 
-		return r;
+		endpoint_path = dbus_message_get_path(m);
+		printf("!! ----- endpoint_set_configuration, endpoint_path: %s \n", endpoint_path);
+
+		dbus_message_iter_init(m, &args);
+
+		const char *signature = dbus_message_get_signature(m);
+		printf("!! ----- endpoint_set_configuration, signature: %s (should equal oa{sv})\n", signature);
+
+		dbus_message_iter_get_basic(&args, &path);
+		dbus_message_iter_next(&args);
+		dbus_message_iter_recurse(&args, &props);
+
+	    while (dbus_message_iter_get_arg_type(&props) == DBUS_TYPE_DICT_ENTRY) {
+	        const char *key;
+	        DBusMessageIter value, entry;
+	        int type;
+
+	        dbus_message_iter_recurse(&props, &entry);
+	        dbus_message_iter_get_basic(&entry, &key);
+
+	        dbus_message_iter_next(&entry);
+	        dbus_message_iter_recurse(&entry, &value);
+
+	        type = dbus_message_iter_get_arg_type(&value);
+	        printf("!! ----- endpoint_set_configuration, key: %s \n", key);
+	    }
+
+	    sender = dbus_message_get_sender(m);
+	    r = dbus_message_new_method_return(m);
+	    dbus_connection_send(conn, r, NULL);
+	    dbus_message_unref(r);
+		return NULL;
 	}
 
 	DBusMessage *endpoint_select_configuration(DBusConnection *conn, DBusMessage *m, void *userdata) {
@@ -343,6 +379,10 @@ namespace a2dp {
 		DBusObjectPathVTable vtable_endpoint;
 		vtable_endpoint.message_function = endpoint_handler;
         dbus_connection_register_object_path(connection, endpoint, &vtable_endpoint, NULL);
+	}
+
+	void endpoint_sink_init(DBusConnection *connection) {
+		endpoint_init(connection, A2DP_SINK_ENDPOINT);
 	}
 
 	static void init(Local<Object> exports) {
