@@ -165,8 +165,6 @@ namespace NodeDBus {
 		// Preparing method arguments
 		if (info[7]->IsObject()) {
 
-			//printf("GOT HERE -> info[7]->IsObject() \n");
-
 			DBusMessageIter iter;
 			DBusSignatureIter siter;
 

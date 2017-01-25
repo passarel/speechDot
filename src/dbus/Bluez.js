@@ -7,7 +7,7 @@ const bus = dbusUtils.bus;
 const notErr = dbusUtils.notErr;
 const addSignalHandler = dbusUtils.addSignalHandler;
 const removeAllHandlersForSignal = dbusUtils.removeAllHandlersForSignal;
-const A2dpEndPoint = require('./A2dpEndPoint.js');
+const A2dpSinkEndpoint = require('./A2dpSinkEndpoint.js');
 
 const EventEmitter = require('events').EventEmitter;
 const util = require('util');
@@ -146,42 +146,35 @@ function Bluez() {
 				console.log('all bluetooth adapters are now powered on');
 				configureAdapter(self, Object.keys(self.adapters), adapterConfig, function() {
 					console.log('all bluetooth adapters are configured');
-					
-					//registerA2dpEndpoint(self, 'source', Object.keys(self.adapters), function() {
-					
-						//registerA2dpEndpoint(self, 'sink', Object.keys(self.adapters), function() {
-						
-
-							PairingAgent.stop(function() {
-								PairingAgent.start(function() {
-									
-									console.log('pairing agent started');
-									
-									
-									//SerialPortProfile.stop(function() {
-										//SerialPortProfile.start(function() {
-											//console.log('serialport profile started');
-											
-											self.emit('ready');
-	
-											
-		
-											
-										//});
-									//});
-									
-									
-								});
+					startPairingAgent(function() {
+						startSerialPortProfile(function() {
+							registerA2dpSinkEndpoints(self, Object.keys(self.adapters), function() {
+								console.log('all a2dp sink endpoints registered');
 							});
-
-						//});
-					
-					//});
-					
+						});
+					});
 					//console.log('---------------------------------------------');
 					//console.log(self.adapters);
 					//console.log('---------------------------------------------');
 				});
+			});
+		});
+	}
+	
+	function startSerialPortProfile(onComplete) {
+		SerialPortProfile.stop(function() {
+			SerialPortProfile.start(function() {
+				console.log('serialport profile started');
+				if (onComplete) onComplete();
+			});
+		});
+	}
+	
+	function startPairingAgent(onComplete) {
+		PairingAgent.stop(function() {
+			PairingAgent.start(function() {
+				console.log('pairing agent started');
+				if (onComplete) onComplete();
 			});
 		});
 	}
@@ -257,7 +250,7 @@ function Bluez() {
 		// otherwise its a race condition
 		
 		//setTimeout(function() {
-			tryConnectDevices(self, Object.keys(self.adapters));
+			//tryConnectDevices(self, Object.keys(self.adapters));
 		//}, 2000);
 	});
 }
@@ -333,15 +326,7 @@ function configureAdapter(self, adapterKeys, options, onComplete) {
 	config();
 }
 
-function getA2dpEndpoint(type) {
-	if (type === 'sink') {
-		return A2dpEndPoint.sink;
-	} else {
-		return A2dpEndPoint.source;
-	}
-}
-
-function registerA2dpEndpoint(self, type, adapterKeys, onComplete) {
+function registerA2dpSinkEndpoints(self, adapterKeys, onComplete) {
 	var i = 0;
 	const nextAdapter = function() {
 		if (i < adapterKeys.length) {
@@ -353,16 +338,7 @@ function registerA2dpEndpoint(self, type, adapterKeys, onComplete) {
 	const registerEndpoint = function() {
 		const adapter = nextAdapter();
 		if (adapter) {
-			
-			getA2dpEndpoint(type).register(adapter.path.replace('/org/bluez/', ''), registerEndpoint);
-			
-			/*
-			if (type === 'sink') {
-				A2dpSinkEndpoint.register(adapter.path.replace('/org/bluez/', ''), registerEndpoint);
-			} else {
-				A2dpSourceEndpoint.register(adapter.path.replace('/org/bluez/', ''), registerEndpoint);
-			}
-			*/
+			A2dpSinkEndpoint.register(adapter.path, registerEndpoint);
 		} else {
 			if (onComplete) onComplete();
 		}

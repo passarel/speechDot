@@ -1,6 +1,5 @@
 {
 	'targets': [
-	
 		{
 			'target_name': 'hfpio',
 			'sources': [
@@ -19,9 +18,7 @@
 					],
 					'cflags': [
 						'-std=gnu++0x',
-						'<!@(pkg-config --cflags sbc)',
-						'<!@(pkg-config --cflags alsa)',
-						'<!@(pkg-config --cflags dbus-1)'
+						'<!@(pkg-config --cflags sbc)'
 					],
 					'ldflags': [
 						'<!@(pkg-config  --libs-only-L --libs-only-other sbc)'
@@ -32,10 +29,11 @@
 				}]
 			]
 		},
-		
 		{
 			'target_name': 'a2dp',
 			'sources': [
+				'src/utils.c',
+				'src/utils.h',
 				'src/a2dp.cc'
 			],
 			'include_dirs': [
@@ -48,21 +46,16 @@
 					],
 					'cflags': [
 						'-std=gnu++0x',
-						'<!@(pkg-config --cflags sbc)',
-						'<!@(pkg-config --cflags alsa)',
-						'<!@(pkg-config --cflags dbus-1)'
+						'<!@(pkg-config --cflags sbc)'
 					],
 					'ldflags': [
-						'<!@(pkg-config  --libs-only-L --libs-only-other sbc)',
-						'<!@(pkg-config  --libs-only-L --libs-only-other dbus-1)'
+						'<!@(pkg-config  --libs-only-L --libs-only-other sbc)'
 					],
 					'libraries': [
-						'<!@(pkg-config  --libs-only-l --libs-only-other sbc)',
-						'<!@(pkg-config  --libs-only-L --libs-only-other dbus-1)'
+						'<!@(pkg-config  --libs-only-l --libs-only-other sbc)'
 					]
 				}]
 			]
 		}
-		
 	]
 }
