@@ -88,7 +88,7 @@ function register(self, adapter, onComplete) {
 			callback();
 		});
 		
-		iface.addMethod('SelectConfiguration', {out: [ DBus.Define(Array) ], in: [ DBus.Define(Array) ]}, function(capabilities, callback) {
+		iface.addMethod('SelectConfiguration', {in: [ DBus.Define(Array) ], out: DBus.Define(Array)}, function(capabilities, callback) {
 			console.log('>>> A2dpSinkEndpoint.SelectConfiguration called');
 			console.log('    capabilities: ' + capabilities);
 			console.log();

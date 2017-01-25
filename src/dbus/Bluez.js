@@ -25,16 +25,6 @@ function Bluez() {
 	
 	const self = this;
 	
-	const removeMediaTransport = function(path, onRemoved) {
-		console.log('removeMediaTransport -> ' + path);
-	}
-	
-	const addMediaTransport = function(meidaTransport, onAdded) {
-		console.log('addMediaTransport -> ' + JSON.stringify(meidaTransport));
-		const a2dpAudioAgent = new A2dpAudioAgent(meidaTransport);
-		a2dpAudioAgent.start();
-	}
-	
 	const addDevice = function(device, onAdded) {
 		console.log('[Bluez.js] attempting to add device...');
 		if (!self.adapters[device.Adapter]) {
@@ -134,11 +124,6 @@ function Bluez() {
 					device.path = key;
 					addDevice(device);
 				}
-//				if (mo[key]['org.bluez.MediaTransport1']) {
-//					const mediaTransport = mo[key]['org.bluez.MediaTransport1'];
-//					mediaTransport.path = key;
-//					addMediaTransport(mediaTransport);
-//				}
 			}
 		});
 		addSignalHandlers(function() {
@@ -221,11 +206,10 @@ function Bluez() {
 						device.path = path;
 						addDevice(device);
 					}
-					if (ifaces['org.bluez.MediaTransport1']) {
-						const mediaTransport = ifaces['org.bluez.MediaTransport1'];
-						mediaTransport.path = path;
-						//addMediaTransport(mediaTransport);
-					}
+//					if (ifaces['org.bluez.MediaTransport1']) {
+//						const mediaTransport = ifaces['org.bluez.MediaTransport1'];
+//						mediaTransport.path = path;
+//					}
 				}, onComplete);
 			});
 		}
@@ -248,10 +232,7 @@ function Bluez() {
 	ProcessManager.on('pulse_online', function(sensory) {
 		// pulse needs to be online to say when a device is connected
 		// otherwise its a race condition
-		
-		//setTimeout(function() {
-			//tryConnectDevices(self, Object.keys(self.adapters));
-		//}, 2000);
+		tryConnectDevices(self, Object.keys(self.adapters));
 	});
 }
 
