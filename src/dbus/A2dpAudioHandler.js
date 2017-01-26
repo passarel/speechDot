@@ -1,0 +1,38 @@
+const DBus = require('../../lib/dbus');
+const dbusUtils = require('../utils/dbus_utils.js');
+const bus = dbusUtils.bus;
+const notErr = dbusUtils.notErr;
+const addSignalHandler = dbusUtils.addSignalHandler;
+const removeAllHandlersForSignal = dbusUtils.removeAllHandlersForSignal;
+const EventEmitter = require('events').EventEmitter;
+const util = require('util');
+util.inherits(A2dpAudioHandler, EventEmitter);
+
+function A2dpAudioHandler() {
+	const self = this;
+	self.add = function(mediaTransport, onComplete) {
+		add(self, mediaTransport, onComplete);
+	}
+}
+
+function add(self, mediaTransportPath, onComplete) {
+//	bus.getInterface('org.bluez', mediaTransportPath, 'org.bluez.MediaTransport1', function(err, iface) {
+//		if (notErr(err)) {
+//		}
+//	});
+	remove(self, mediaTransportPath, function() {
+		addSignalHandler('org.bluez', mediaTransportPath, 'org.freedesktop.DBus.Properties', 'PropertiesChanged', function(ifaceName, props) {
+			Object.keys(props).forEach(function(name) {
+				const val = props[name];
+				console.log('[Bluez.MediaTransport1] PropertyChanged: ' + mediaTransportPath + ', ' + name + '=' + val);
+			});
+			if (onComplete) onComplete();
+		});
+	});
+}
+
+function remove(self, mediaTransportPath, onComplete) {
+	removeAllHandlersForSignal('org.bluez', mediaTransportPath, 'org.freedesktop.DBus.Properties', 'PropertiesChanged', onComplete);
+}
+
+module.exports = new A2dpAudioHandler();

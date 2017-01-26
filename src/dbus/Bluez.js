@@ -8,6 +8,7 @@ const notErr = dbusUtils.notErr;
 const addSignalHandler = dbusUtils.addSignalHandler;
 const removeAllHandlersForSignal = dbusUtils.removeAllHandlersForSignal;
 const A2dpSinkEndpoint = require('./A2dpSinkEndpoint.js');
+const A2dpAudioHandler = require('./A2dpAudioHandler.js');
 
 const EventEmitter = require('events').EventEmitter;
 const util = require('util');
@@ -206,10 +207,9 @@ function Bluez() {
 						device.path = path;
 						addDevice(device);
 					}
-//					if (ifaces['org.bluez.MediaTransport1']) {
-//						const mediaTransport = ifaces['org.bluez.MediaTransport1'];
-//						mediaTransport.path = path;
-//					}
+					if (ifaces['org.bluez.MediaTransport1']) {
+						A2dpAudioHandler.add(path); //will remove any existing handler and then add...
+					}
 				}, onComplete);
 			});
 		}

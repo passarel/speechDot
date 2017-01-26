@@ -60,20 +60,20 @@ function A2dpSinkEndpoint() {
 	self.endpoint_props.Codec = 0x00;
 	self.endpoint_props.Capabilities = sbc_capabilities;
 	
-	self.register = function(adapter, onComplete) {
-		register(self, adapter, onComplete);
+	self.register = function(adapterPath, onComplete) {
+		register(self, adapterPath, onComplete);
 	}
 	
-	self.unregister = function(adapter, onComplete) {
-		unregister(self, adapter, onComplete);
+	self.unregister = function(adapterPath, onComplete) {
+		unregister(self, adapterPath, onComplete);
 	}
 }
 
-function unregister(self, adapter, onComplete) {
+function unregister(self, adapterPath, onComplete) {
 
 }
 
-function register(self, adapter, onComplete) {
+function register(self, adapterPath, onComplete) {
 	if (!self.profile) {
 		
 		var obj = self.service.createObject(self.object_path);
@@ -111,18 +111,18 @@ function register(self, adapter, onComplete) {
 		iface.update();
 	}
 	
-	bus.getInterface('org.bluez', adapter, 'org.bluez.Media1', function(err, iface) {
+	bus.getInterface('org.bluez', adapterPath, 'org.bluez.Media1', function(err, iface) {
 		if (notErr(err)) {
 			iface.RegisterEndpoint['timeout'] = 1000;
 			iface.RegisterEndpoint['finish'] = function() {
 				var args = Array.prototype.slice.call(arguments);
 				args.splice(0, 0, null); // there is no error
-				console.log('A2dpSinkEndpoint.register(' + adapter + ') - SUCCESS');
+				console.log('A2dpSinkEndpoint.register(' + adapterPath + ') - SUCCESS');
 				if (onComplete) onComplete.apply(null, args);
 			};
 			iface.RegisterEndpoint['error'] = function(err) {
 				console.log('[error] A2dpSinkEndpoint.register - ' + err);
-				console.log('A2dpSinkEndpoint.register(' + adapter + ') - ERROR');
+				console.log('A2dpSinkEndpoint.register(' + adapterPath + ') - ERROR');
 				if (onComplete) onComplete(err);
 			};
 			iface.RegisterEndpoint(self.object_path, self.endpoint_props);
