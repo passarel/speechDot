@@ -45,11 +45,6 @@ namespace hfpio {
 	    set_priority(fd, priority);
 	}
 
-	NAN_METHOD(MakeBlocking) {
-	    int fd = info[0]->Int32Value();
-	    make_blocking(fd);
-	}
-
 	void write_async(uv_work_t *req) {
 		socket_io_args_t *socket_io_args = static_cast<socket_io_args_t *>(req->data);
 		socket_io_args->return_val = write(socket_io_args->fd, socket_io_args->buf, socket_io_args->buf_len);
@@ -220,19 +215,12 @@ namespace hfpio {
 		enable_socket(fd);
 	}
 
-	NAN_METHOD(ReadOneByte) {
-		int fd = info[0]->Int32Value();
-		read_one_byte(fd);
-	}
-
 	static void init(Local<Object> exports) {
 
 		Nan::SetMethod(exports, "msbcNew", MsbcNew);
 
 		Nan::SetMethod(exports, "msbcFree", MsbcFree);
 		Nan::SetMethod(exports, "enableSocket", EnableSocket);
-
-		Nan::SetMethod(exports, "readOneByte", ReadOneByte);
 
 		Nan::SetMethod(exports, "msbcDecode", MsbcDecode);
 		Nan::SetMethod(exports, "msbcEncode", MsbcEncode);
@@ -248,7 +236,6 @@ namespace hfpio {
 
 		Nan::SetMethod(exports, "poll", PollAsync);
 		Nan::SetMethod(exports, "pollSync", PollSync);
-		Nan::SetMethod(exports, "makeBlocking", MakeBlocking);
 		Nan::SetMethod(exports, "setPriority", SetPriority);
 
 		Nan::SetMethod(exports, "closeFd", CloseFd);

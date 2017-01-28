@@ -30,14 +30,6 @@ void make_nonblocking(int fd) {
 		print_errno("fcntl");
 }
 
-void read_one_byte(int fd) {
-    printf("enabling socket by reading 1 byte...\n");
-    char c;
-    if (read(fd, &c, 1) < 0)
-    	print_errno("read");
-    printf("socket is now enabled\n");
-}
-
 void enable_socket(int fd) {
 	if (recv(fd, NULL, 0, 0)<  0)
 		printf("Defered setup failed: %d (%s)\n", errno, strerror(errno));

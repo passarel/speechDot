@@ -5,6 +5,7 @@ extern "C"
 
 #include <v8.h>
 #include <nan.h>
+#include <sbc/sbc.h>
 
 typedef struct {
 	uint8_t channel_mode:4;
@@ -48,8 +49,20 @@ namespace a2dp {
 //    if (setsockopt(u->stream_fd, SOL_SOCKET, SO_TIMESTAMP, &one, sizeof(one)) < 0)
 //        pa_log_warn("Failed to enable SO_TIMESTAMP: %s", pa_cstrerror(errno));
 
+	void sbc_set_bitpool(sbc_t *sbc, uint8_t min_bitpool, uint8_t max_bitpool, uint8_t bitpool) {
+	    if (sbc->bitpool == bitpool)
+	        return;
+
+	    if (bitpool > max_bitpool)
+	        bitpool = max_bitpool;
+	    else if (bitpool < min_bitpool)
+	        bitpool = min_bitpool;
+
+	    sbc->bitpool = bitpool;
+	}
+
 	void setup_stream(int fd) {
-		make_blocking(fd);
+		make_nonblocking(fd);
 	}
 
 	void sbc_io(int fd, int mtuRead, int mtuWrite) {
