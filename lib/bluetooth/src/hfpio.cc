@@ -42,12 +42,12 @@ namespace hfpio {
 	NAN_METHOD(SetPriority) {
 	    int fd = info[0]->Int32Value();
 	    int priority = info[1]->Int32Value();
-	    if (setsockopt(fd, SOL_SOCKET, SO_PRIORITY, (const void *) &priority, sizeof(priority)) < 0)
-	    	print_errno("setsockopt");
+	    set_priority(fd, priority);
 	}
 
 	NAN_METHOD(MakeBlocking) {
 	    int fd = info[0]->Int32Value();
+	    make_blocking(fd);
 	}
 
 	void write_async(uv_work_t *req) {

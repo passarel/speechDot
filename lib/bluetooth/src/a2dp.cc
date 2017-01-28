@@ -1,10 +1,7 @@
-
-/*
 extern "C"
 {
 	#include "utils.h"
 }
-*/
 
 #include <v8.h>
 #include <nan.h>
@@ -44,11 +41,22 @@ namespace a2dp {
 
 	}
 
-	/*
-	NAN_METHOD(ByteArrayFromSbcConfig) {
+//    pa_make_fd_nonblock(u->stream_fd);
+//    pa_make_socket_low_delay(u->stream_fd);
+//
+//    one = 1;
+//    if (setsockopt(u->stream_fd, SOL_SOCKET, SO_TIMESTAMP, &one, sizeof(one)) < 0)
+//        pa_log_warn("Failed to enable SO_TIMESTAMP: %s", pa_cstrerror(errno));
+
+	void setup_stream(int fd) {
+		make_blocking(fd);
+	}
+
+	void sbc_io(int fd, int mtuRead, int mtuWrite) {
+		printf("!! ----- GOT HERE ----- sbc_io() \n");
+
 
 	}
-	*/
 
 	static void init(Local<Object> exports) {
 

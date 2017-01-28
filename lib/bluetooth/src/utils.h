@@ -9,5 +9,7 @@ void read_one_byte(int fd);
 
 void enable_socket(int fd);
 
+void set_priority(int fd, int priority);
+
 short poll_func(int fd, short events, int timeout);
 

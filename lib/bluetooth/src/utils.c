@@ -10,6 +10,26 @@ void make_blocking(int fd) {
 		print_errno("fcntl");
 }
 
+void enable_timestamps(int fd) {
+
+	/*
+	if (setsockopt(fd, SOL_SOCKET, SO_TIMESTAMP, &one, sizeof(one)) < 0)
+		print_errno("setsockopt");
+		pa_log_warn("Failed to enable SO_TIMESTAMP: %s", pa_cstrerror(errno));
+		*/
+}
+
+void set_priority(int fd, int priority) {
+    if (setsockopt(fd, SOL_SOCKET, SO_PRIORITY, (const void *) &priority, sizeof(priority)) < 0)
+    	print_errno("setsockopt");
+}
+
+void make_nonblocking(int fd) {
+	int flags = fcntl(fd, F_GETFL); // get flags
+	if (fcntl(fd, F_SETFL, flags & O_NONBLOCK) < 0)
+		print_errno("fcntl");
+}
+
 void read_one_byte(int fd) {
     printf("enabling socket by reading 1 byte...\n");
     char c;
