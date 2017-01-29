@@ -11,12 +11,10 @@ void make_blocking(int fd) {
 }
 
 void enable_timestamps(int fd) {
-
-	/*
+	int one = 1;
 	if (setsockopt(fd, SOL_SOCKET, SO_TIMESTAMP, &one, sizeof(one)) < 0)
 		print_errno("setsockopt");
-		pa_log_warn("Failed to enable SO_TIMESTAMP: %s", pa_cstrerror(errno));
-		*/
+
 }
 
 void set_priority(int fd, int priority) {

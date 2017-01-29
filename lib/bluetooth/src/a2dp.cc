@@ -24,10 +24,8 @@ namespace a2dp {
 	using namespace std;
 
 	NAN_METHOD(SbcConfigFromByteArray) {
-
 		unsigned char *buf = (unsigned char *) node::Buffer::Data(info[0].As<v8::Object>());
 		a2dp_sbc_t *sbc_config;
-
 		sbc_config = (a2dp_sbc_t *) buf;
 
 		v8::Local<Object> obj = Nan::New<Object>();
@@ -39,42 +37,38 @@ namespace a2dp {
 		obj->Set(Nan::New("minBitpool").ToLocalChecked(), Nan::New<Integer>(sbc_config->min_bitpool));
 		obj->Set(Nan::New("maxBitpool").ToLocalChecked(), Nan::New<Integer>(sbc_config->max_bitpool));
 		info.GetReturnValue().Set(obj);
-
 	}
 
-//    pa_make_fd_nonblock(u->stream_fd);
-//    pa_make_socket_low_delay(u->stream_fd);
-//
-//    one = 1;
-//    if (setsockopt(u->stream_fd, SOL_SOCKET, SO_TIMESTAMP, &one, sizeof(one)) < 0)
-//        pa_log_warn("Failed to enable SO_TIMESTAMP: %s", pa_cstrerror(errno));
-
-	void sbc_set_bitpool(sbc_t *sbc, uint8_t min_bitpool, uint8_t max_bitpool, uint8_t bitpool) {
+	void sbc_set_bitpool(sbc_t *sbc, a2dp_sbc_t *sbc_config, uint8_t bitpool) {
+		printf("!! ----- GOT HERE ----- sbc_set_bitpool() \n");
 	    if (sbc->bitpool == bitpool)
 	        return;
 
-	    if (bitpool > max_bitpool)
-	        bitpool = max_bitpool;
-	    else if (bitpool < min_bitpool)
-	        bitpool = min_bitpool;
+	    if (bitpool > sbc_config->max_bitpool)
+	        bitpool = sbc_config->max_bitpool;
+	    else if (bitpool < sbc_config->min_bitpool)
+	        bitpool = sbc_config->min_bitpool;
 
 	    sbc->bitpool = bitpool;
 	}
 
-	void setup_stream(int fd) {
+	void setup_stream(int fd, sbc_t *sbc, a2dp_sbc_t *sbc_config) {
+		printf("!! ----- GOT HERE ----- setup_stream() \n");
 		make_nonblocking(fd);
+		set_priority(fd, 6);
+		enable_timestamps(fd);
+		sbc_set_bitpool(sbc, sbc_config, sbc_config->max_bitpool);
 	}
 
-	void sbc_io(int fd, int mtuRead, int mtuWrite) {
+	void sbc_io(int fd, int mtu_read, int mtu_write, sbc_t *sbc, a2dp_sbc_t *sbc_config) {
 		printf("!! ----- GOT HERE ----- sbc_io() \n");
 
+		setup_stream(fd, sbc, sbc_config);
 
 	}
 
 	static void init(Local<Object> exports) {
-
 		Nan::SetMethod(exports, "sbcConfigFromByteArray", SbcConfigFromByteArray);
-
 	}
 
 	NODE_MODULE(a2dp, init);

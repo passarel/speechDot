@@ -13,3 +13,5 @@ void set_priority(int fd, int priority);
 
 short poll_func(int fd, short events, int timeout);
 
+void enable_timestamps(int fd);
+
