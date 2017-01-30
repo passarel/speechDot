@@ -47,24 +47,23 @@ short poll_func(int fd, short events, int timeout) {
 }
 
 struct timeval *rtclock_get(struct timeval *tv) {
-
 	struct timespec ts;
-
 #ifdef CLOCK_MONOTONIC
-// No locking or atomic ops for no_monotonic here
 static bool no_monotonic = false;
-
 if (clock_gettime(CLOCK_MONOTONIC, &ts) < 0)
 	no_monotonic = true;
-
 if (no_monotonic)
 #endif // CLOCK_MONOTONIC
     assert(clock_gettime(CLOCK_REALTIME, &ts) == 0);
 	assert(tv);
-
 	tv->tv_sec = ts.tv_sec;
 	tv->tv_usec = ts.tv_nsec / ((unsigned long long) 1000ULL);
-
 	return tv;
+}
+
+uint64_t timeval_load(const struct timeval *tv) {
+	assert(tv);
+    return
+        (uint64_t) tv->tv_sec * ((uint64_t) 1000000ULL) + (uint64_t) tv->tv_usec;
 }
 
