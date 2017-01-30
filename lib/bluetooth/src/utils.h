@@ -1,5 +1,7 @@
 #include <uv.h>
 #include <poll.h>
+#include <unistd.h>
+#include <stdbool.h>
 
 void print_errno(const char *method_name);
 

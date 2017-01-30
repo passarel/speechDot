@@ -91,7 +91,12 @@ namespace a2dp {
 	        header = (rtp_header*) buffer;
 	        payload = (struct rtp_payload*) ((uint8_t*) buffer + sizeof(*header));
 
-	        //l = pa_read(u->stream_fd, sbc_info->buffer, sbc_info->buffer_size, &u->stream_write_type);
+	        l = read(fd, buffer, buffer_size);
+	        if (l < 0) {
+	        	print_errno("read");
+	        	break;
+	        }
+
 		}
 
 
