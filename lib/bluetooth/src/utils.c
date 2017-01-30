@@ -67,3 +67,8 @@ uint64_t timeval_load(const struct timeval *tv) {
         (uint64_t) tv->tv_sec * ((uint64_t) 1000000ULL) + (uint64_t) tv->tv_usec;
 }
 
+uint64_t rtclock_now(void) {
+    struct timeval tv;
+    return timeval_load(rtclock_get(&tv));
+}
+
