@@ -5,7 +5,7 @@ Release/obj.target/a2dp/src/a2dp.o: ../src/a2dp.cc ../src/utils.h \
  /home/pi/.node-gyp/7.1.0/include/node/uv-version.h \
  /home/pi/.node-gyp/7.1.0/include/node/uv-unix.h \
  /home/pi/.node-gyp/7.1.0/include/node/uv-threadpool.h \
- /home/pi/.node-gyp/7.1.0/include/node/uv-linux.h \
+ /home/pi/.node-gyp/7.1.0/include/node/uv-linux.h ../src/rtp.h \
  /home/pi/.node-gyp/7.1.0/include/node/v8.h \
  /home/pi/.node-gyp/7.1.0/include/node/v8-version.h \
  /home/pi/.node-gyp/7.1.0/include/node/v8config.h \
@@ -35,6 +35,7 @@ Release/obj.target/a2dp/src/a2dp.o: ../src/a2dp.cc ../src/utils.h \
 /home/pi/.node-gyp/7.1.0/include/node/uv-unix.h:
 /home/pi/.node-gyp/7.1.0/include/node/uv-threadpool.h:
 /home/pi/.node-gyp/7.1.0/include/node/uv-linux.h:
+../src/rtp.h:
 /home/pi/.node-gyp/7.1.0/include/node/v8.h:
 /home/pi/.node-gyp/7.1.0/include/node/v8-version.h:
 /home/pi/.node-gyp/7.1.0/include/node/v8config.h:

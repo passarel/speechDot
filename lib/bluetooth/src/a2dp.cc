@@ -1,6 +1,7 @@
 extern "C"
 {
 	#include "utils.h"
+	#include "rtp.h"
 }
 
 #include <v8.h>
@@ -16,6 +17,20 @@ typedef struct {
 	uint8_t min_bitpool;
 	uint8_t max_bitpool;
 } __attribute__ ((packed)) a2dp_sbc_t;
+
+/*
+typedef struct sbc_info {
+    sbc_t sbc;
+    bool sbc_initialized;
+    size_t codesize, frame_length;
+    uint16_t seq_num;
+    uint8_t min_bitpool;
+    uint8_t max_bitpool;
+
+    void* buffer;
+    size_t buffer_size;
+} sbc_info_t;
+*/
 
 namespace a2dp {
 
@@ -52,12 +67,53 @@ namespace a2dp {
 	    sbc->bitpool = bitpool;
 	}
 
+	void process(int fd, sbc_t *sbc, a2dp_sbc_t *sbc_config, int read_mtu, int write_mtu) {
+		// from a2dp_process_push
+		for (;;) {
+			bool found_tstamp = false;
+			uint64_t tstamp;
+	        struct rtp_header *header;
+	        struct rtp_payload *payload;
+	        const void *p;
+	        void *d;
+	        ssize_t l;
+	        size_t to_write, to_decode;
+	        size_t total_written = 0;
+
+	        void* buffer;
+	        size_t buffer_size;
+
+	        if (read_mtu > write_mtu) buffer_size = read_mtu;
+	        else buffer_size = write_mtu;
+
+	        buffer = malloc(buffer_size);
+
+	        header = (rtp_header*) buffer;
+	        payload = (struct rtp_payload*) ((uint8_t*) buffer + sizeof(*header));
+
+	        //l = pa_read(u->stream_fd, sbc_info->buffer, sbc_info->buffer_size, &u->stream_write_type);
+		}
+
+
+
+	}
+
 	void setup_stream(int fd, sbc_t *sbc, a2dp_sbc_t *sbc_config) {
 		printf("!! ----- GOT HERE ----- setup_stream() \n");
 		make_nonblocking(fd);
 		set_priority(fd, 6);
 		enable_timestamps(fd);
 		sbc_set_bitpool(sbc, sbc_config, sbc_config->max_bitpool);
+
+		while (true) {
+			short pval = poll_func(fd, POLLIN, -1);
+			if (pval == 0 || (pval & ~POLLIN)) {
+				printf("Poll val of %d is not POLLIN, exiting...", pval);
+				break;
+			}
+
+		}
+
 	}
 
 	void sbc_io(int fd, int mtu_read, int mtu_write, sbc_t *sbc, a2dp_sbc_t *sbc_config) {
