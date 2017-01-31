@@ -218,8 +218,8 @@ namespace hfpio {
 	static void init(Local<Object> exports) {
 
 		Nan::SetMethod(exports, "msbcNew", MsbcNew);
-
 		Nan::SetMethod(exports, "msbcFree", MsbcFree);
+
 		Nan::SetMethod(exports, "enableSocket", EnableSocket);
 
 		Nan::SetMethod(exports, "msbcDecode", MsbcDecode);

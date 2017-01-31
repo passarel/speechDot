@@ -1,6 +1,7 @@
 #include "utils.h"
+#include "a2dp-codecs.h"
 
-namespace hfpio {
+namespace a2dp {
 
 	using namespace utils;
 

@@ -134,9 +134,9 @@ function Bluez() {
 					console.log('all bluetooth adapters are configured');
 					startPairingAgent(function() {
 						startSerialPortProfile(function() {
-							registerA2dpSinkEndpoints(self, Object.keys(self.adapters), function() {
-								console.log('all a2dp sink endpoints registered');
-							});
+							//registerA2dpSinkEndpoints(self, Object.keys(self.adapters), function() {
+								//console.log('all a2dp sink endpoints registered');
+							//});
 						});
 					});
 					//console.log('---------------------------------------------');
@@ -208,7 +208,7 @@ function Bluez() {
 						addDevice(device);
 					}
 					if (ifaces['org.bluez.MediaTransport1']) {
-						A2dpAudioHandler.add(path); //will remove any existing handler and then add...
+						//A2dpAudioHandler.add(path); //will remove any existing handler and then add...
 					}
 				}, onComplete);
 			});
