@@ -2,7 +2,7 @@
 
 namespace a2dp {
 
-	struct decode_args_t {
+	struct sbc_args_t {
 		char *in_buf;
 		int in_buf_len;
 		char *out_buf;
@@ -90,54 +90,66 @@ namespace a2dp {
 	}
 
 	void decode_async(uv_work_t *req) {
-		decode_args_t *decode_args = static_cast<decode_args_t *>(req->data);
-		assert(decode_args->in_buf_len == 595);
-		decode_args->out_buf_len = 2560;
-		decode_args->out_buf = (char *) malloc(decode_args->out_buf_len);
+		sbc_args_t *sbc_args = static_cast<sbc_args_t *>(req->data);
+		assert(sbc_args->in_buf_len == 595);
+		sbc_args->out_buf_len = 2560;
+		sbc_args->out_buf = (char *) malloc(sbc_args->out_buf_len);
 		size_t total_written = 0;
-		while (decode_args->in_buf_len > 0) {
+		while (sbc_args->in_buf_len > 0) {
 	        size_t written;
 	        ssize_t decoded;
-	        decoded = sbc_decode(decode_args->sbc,
-								decode_args->in_buf, decode_args->in_buf_len,
-								decode_args->out_buf, decode_args->out_buf_len,
+	        decoded = sbc_decode(sbc_args->sbc,
+								sbc_args->in_buf, sbc_args->in_buf_len,
+								sbc_args->out_buf, sbc_args->out_buf_len,
 								&written);
 	        total_written += written;
 	        assert(decoded == 119);
 	        assert(written == 512);
-            decode_args->in_buf += decoded;
-            decode_args->in_buf_len -= decoded;
-            decode_args->out_buf += written;
-            decode_args->in_buf_len -= written;
+            sbc_args->in_buf += decoded;
+            sbc_args->in_buf_len -= decoded;
+            sbc_args->out_buf += written;
+            sbc_args->in_buf_len -= written;
 		}
 		assert(total_written == 2560);
-		// reset out_buf pointer to begining
-		decode_args->out_buf -= total_written;
-		decode_args->out_buf_len = 2560;
+		// reset out_buf pointer to begin
+		sbc_args->out_buf -= total_written;
+		sbc_args->out_buf_len = 2560;
 	}
 
 	void decode_async_after(uv_work_t *req, int status) {
-		decode_args_t *decode_args = static_cast<decode_args_t *>(req->data);
+		sbc_args_t *sbc_args = static_cast<sbc_args_t *>(req->data);
 		Nan::HandleScope scope;
-		Local<Function> cb = Nan::New(decode_args->callback);
-		Local<Value> decodedData = Nan::NewBuffer(decode_args->out_buf, decode_args->out_buf_len).ToLocalChecked();
+		Local<Function> cb = Nan::New(sbc_args->callback);
+		Local<Value> decodedData = Nan::NewBuffer(sbc_args->out_buf, sbc_args->out_buf_len).ToLocalChecked();
 		const unsigned argc = 1;
 		Local<Value> argv[argc] = { decodedData };
 		Nan::MakeCallback(Nan::GetCurrentContext()->Global(), cb, argc, argv);
-		decode_args->callback.Reset();
-		delete decode_args;
+		sbc_args->callback.Reset();
+		delete sbc_args;
 	}
 
 	NAN_METHOD(Decode) {
-		decode_args_t *decode_args = new decode_args_t;
-		decode_args->in_buf = (char *) node::Buffer::Data(info[0].As<v8::Object>());
-		decode_args->in_buf_len = info[1]->Int32Value();
-		decode_args->request.data = decode_args;
-		uv_queue_work(uv_default_loop(), &decode_args->request, decode_async, decode_async_after);
+		sbc_args_t *sbc_args = new sbc_args_t;
+		sbc_args->sbc = reinterpret_cast<sbc_t *>(UnwrapPointer(info[0]));
+		sbc_args->in_buf = (char *) node::Buffer::Data(info[1].As<v8::Object>());
+		sbc_args->in_buf_len = info[2]->Int32Value();
+		sbc_args->request.data = sbc_args;
+		uv_queue_work(uv_default_loop(), &sbc_args->request, decode_async, decode_async_after);
 	}
 
 	NAN_METHOD(SbcNew) {
+
+		printf("\n!! ----- GOT HERE ----- SbcNew() \n");
+
 		a2dp_sbc_t *config = reinterpret_cast<a2dp_sbc_t *>(UnwrapPointer(info[0]));
+
+		printf("\n!! ----- SbcNew, config.frequency: %d \n", config->frequency);
+		printf("!! ----- SbcNew, config.block_length: %d \n", config->block_length);
+		printf("!! ----- SbcNew, config.allocation_method: %d \n", config->allocation_method);
+		printf("!! ----- SbcNew, config.max_bitpool: %d \n", config->max_bitpool);
+		printf("!! ----- SbcNew, config.subbands: %d \n", config->subbands);
+		printf("!! ----- SbcNew, config.channel_mode: %d \n\n", config->channel_mode);
+
 		sbc_t *sbc = sbc_new(config);
 		info.GetReturnValue().Set(WrapPointer(sbc).ToLocalChecked());
 	}

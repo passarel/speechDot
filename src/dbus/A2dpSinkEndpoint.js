@@ -3,6 +3,8 @@ const DBus = require('../../lib/dbus');
 //const a2dp = require('../../lib/bluetooth').a2dp;
 //const spawn = require('child_process').spawn;
 
+const A2dpAudioHandler = require('./A2dpAudioHandler.js');
+
 const appUtils = require('../utils/app_utils.js');
 const dbusUtils = require('../utils/dbus_utils.js');
 const bus = dbusUtils.bus;
@@ -81,14 +83,18 @@ function register(self, adapterPath, onComplete) {
 		self.profile = {obj: obj, iface: iface};
 				
 		iface.addMethod('SetConfiguration', {in: [ DBus.Define(Object), DBus.Define(Object) ]}, function(path, props, callback) {
+			console.log();
 			console.log('>>> A2dpSinkEndpoint.SetConfiguration called');
 			console.log('    path: ' + path);
 			console.log('    props: ' + JSON.stringify(props));
 			console.log();
 			callback();
+			
+			A2dpAudioHandler.add(path, props.Configuration); //will remove any existing handler and then add...
 		});
 		
 		iface.addMethod('SelectConfiguration', {in: [ DBus.Define(Array) ], out: DBus.Define(Array)}, function(capabilities, callback) {
+			console.log();
 			console.log('>>> A2dpSinkEndpoint.SelectConfiguration called');
 			console.log('    capabilities: ' + capabilities);
 			console.log();
@@ -96,6 +102,7 @@ function register(self, adapterPath, onComplete) {
 		});
 		
 		iface.addMethod('ClearConfiguration', {in: [ DBus.Define(Object) ]}, function(path, callback) {
+			console.log();
 			console.log('>>> A2dpSinkEndpoint.ClearConfiguration called');
 			console.log('    path: ' + path);
 			console.log();
@@ -103,6 +110,7 @@ function register(self, adapterPath, onComplete) {
 		});
 		
 		iface.addMethod('Release', {}, function(callback) {
+			console.log();
 			console.log('>> A2dpSinkEndpoint.Release called');
 			console.log();
 			callback();

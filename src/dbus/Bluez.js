@@ -8,7 +8,6 @@ const notErr = dbusUtils.notErr;
 const addSignalHandler = dbusUtils.addSignalHandler;
 const removeAllHandlersForSignal = dbusUtils.removeAllHandlersForSignal;
 const A2dpSinkEndpoint = require('./A2dpSinkEndpoint.js');
-const A2dpAudioHandler = require('./A2dpAudioHandler.js');
 
 const EventEmitter = require('events').EventEmitter;
 const util = require('util');
@@ -134,9 +133,9 @@ function Bluez() {
 					console.log('all bluetooth adapters are configured');
 					startPairingAgent(function() {
 						startSerialPortProfile(function() {
-							//registerA2dpSinkEndpoints(self, Object.keys(self.adapters), function() {
-								//console.log('all a2dp sink endpoints registered');
-							//});
+							registerA2dpSinkEndpoints(self, Object.keys(self.adapters), function() {
+								console.log('all a2dp sink endpoints registered');
+							});
 						});
 					});
 					//console.log('---------------------------------------------');
@@ -207,9 +206,7 @@ function Bluez() {
 						device.path = path;
 						addDevice(device);
 					}
-					if (ifaces['org.bluez.MediaTransport1']) {
-						//A2dpAudioHandler.add(path); //will remove any existing handler and then add...
-					}
+					//if (ifaces['org.bluez.MediaTransport1']) {}
 				}, onComplete);
 			});
 		}
