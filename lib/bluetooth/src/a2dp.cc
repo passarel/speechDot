@@ -111,7 +111,9 @@ namespace a2dp {
             decode_args->in_buf_len -= written;
 		}
 		assert(total_written == 2560);
-		decode_args->out_buf -= total_written; //reset pointer to begining
+		// reset out_buf pointer to begining
+		decode_args->out_buf -= total_written;
+		decode_args->out_buf_len = 2560;
 	}
 
 	void decode_async_after(uv_work_t *req, int status) {
