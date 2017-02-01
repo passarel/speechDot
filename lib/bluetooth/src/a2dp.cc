@@ -2,54 +2,15 @@
 
 namespace a2dp {
 
-	NAN_METHOD(SbcConfigFromByteArray) {
-		unsigned char *buf = (unsigned char *) node::Buffer::Data(info[0].As<v8::Object>());
-		a2dp_sbc_t *sbc_config;
-		sbc_config = (a2dp_sbc_t *) buf;
-
-		v8::Local<Object> obj = Nan::New<Object>();
-		obj->Set(Nan::New("channelMode").ToLocalChecked(), Nan::New<Integer>(sbc_config->channel_mode));
-		obj->Set(Nan::New("frequency").ToLocalChecked(), Nan::New<Integer>(sbc_config->frequency));
-		obj->Set(Nan::New("allocationMethod").ToLocalChecked(), Nan::New<Integer>(sbc_config->allocation_method));
-		obj->Set(Nan::New("subbands").ToLocalChecked(), Nan::New<Integer>(sbc_config->subbands));
-		obj->Set(Nan::New("blockLength").ToLocalChecked(), Nan::New<Integer>(sbc_config->block_length));
-		obj->Set(Nan::New("minBitpool").ToLocalChecked(), Nan::New<Integer>(sbc_config->min_bitpool));
-		obj->Set(Nan::New("maxBitpool").ToLocalChecked(), Nan::New<Integer>(sbc_config->max_bitpool));
-		info.GetReturnValue().Set(obj);
-	}
-
-	/*
-	void process(int fd, sbc_t *sbc, a2dp_sbc_t *sbc_config, int read_mtu, int write_mtu) {
-		// from a2dp_process_push
-		for (;;) {
-			bool found_tstamp = false;
-			uint64_t tstamp;
-	        struct rtp_header *header;
-	        struct rtp_payload *payload;
-	        const void *p;
-	        void *d;
-	        ssize_t l;
-	        size_t to_write, to_decode;
-	        size_t total_written = 0;
-	        void* buffer;
-	        size_t buffer_size;
-	        if (read_mtu > write_mtu) buffer_size = read_mtu;
-	        else buffer_size = write_mtu;
-	        buffer = malloc(buffer_size);
-	        header = (rtp_header*) buffer;
-	        payload = (struct rtp_payload*) ((uint8_t*) buffer + sizeof(*header));
-	        l = read(fd, buffer, buffer_size);
-	        if (l < 0) {
-	        	print_errno("read");
-	        	break;
-	        }
-	        // TODO: get timestamp from rtp
-	        if (!found_tstamp) {
-	        	tstamp = rtclock_now();
-	        }
-		}
-	}
-	*/
+	struct decode_args_t {
+		char *in_buf;
+		int in_buf_len;
+		char *out_buf;
+		int out_buf_len;
+		sbc_t *sbc;
+		uv_work_t request;
+		Nan::Persistent<Function> callback;
+	};
 
 	sbc_t *sbc_new(a2dp_sbc_t *config) {
 		sbc_t *sbc = new sbc_t;
@@ -128,6 +89,51 @@ namespace a2dp {
 		return sbc;
 	}
 
+	void decode_async(uv_work_t *req) {
+		decode_args_t *decode_args = static_cast<decode_args_t *>(req->data);
+		assert(decode_args->in_buf_len == 595);
+		decode_args->out_buf_len = 2560;
+		decode_args->out_buf = (char *) malloc(decode_args->out_buf_len);
+		size_t total_written = 0;
+		while (decode_args->in_buf_len > 0) {
+	        size_t written;
+	        ssize_t decoded;
+	        decoded = sbc_decode(decode_args->sbc,
+								decode_args->in_buf, decode_args->in_buf_len,
+								decode_args->out_buf, decode_args->out_buf_len,
+								&written);
+	        total_written += written;
+	        assert(decoded == 119);
+	        assert(written == 512);
+            decode_args->in_buf += decoded;
+            decode_args->in_buf_len -= decoded;
+            decode_args->out_buf += written;
+            decode_args->in_buf_len -= written;
+		}
+		assert(total_written == 2560);
+		decode_args->out_buf -= total_written; //reset pointer to begining
+	}
+
+	void decode_async_after(uv_work_t *req, int status) {
+		decode_args_t *decode_args = static_cast<decode_args_t *>(req->data);
+		Nan::HandleScope scope;
+		Local<Function> cb = Nan::New(decode_args->callback);
+		Local<Value> decodedData = Nan::NewBuffer(decode_args->out_buf, decode_args->out_buf_len).ToLocalChecked();
+		const unsigned argc = 1;
+		Local<Value> argv[argc] = { decodedData };
+		Nan::MakeCallback(Nan::GetCurrentContext()->Global(), cb, argc, argv);
+		decode_args->callback.Reset();
+		delete decode_args;
+	}
+
+	NAN_METHOD(Decode) {
+		decode_args_t *decode_args = new decode_args_t;
+		decode_args->in_buf = (char *) node::Buffer::Data(info[0].As<v8::Object>());
+		decode_args->in_buf_len = info[1]->Int32Value();
+		decode_args->request.data = decode_args;
+		uv_queue_work(uv_default_loop(), &decode_args->request, decode_async, decode_async_after);
+	}
+
 	NAN_METHOD(SbcNew) {
 		a2dp_sbc_t *config = reinterpret_cast<a2dp_sbc_t *>(UnwrapPointer(info[0]));
 		sbc_t *sbc = sbc_new(config);
@@ -140,21 +146,18 @@ namespace a2dp {
 		delete sbc;
 	}
 
-	NAN_METHOD(SetupStream) {
+	NAN_METHOD(SetupSocket) {
 		int fd = info[0]->Int32Value();
 		make_nonblocking(fd);
 		set_priority(fd, 6);
 	}
 
 	static void init(Local<Object> exports) {
-
-		Nan::SetMethod(exports, "sbcConfigFromByteArray", SbcConfigFromByteArray);
-
 		Nan::SetMethod(exports, "sbcNew", SbcNew);
-
 		Nan::SetMethod(exports, "sbcFree", SbcFree);
-
-		Nan::SetMethod(exports, "setupStream", SetupStream);
+		Nan::SetMethod(exports, "setupSocket", SetupSocket);
+		Nan::SetMethod(exports, "read", ReadAsync);
+		Nan::SetMethod(exports, "decode", Decode);
 	}
 
 	NODE_MODULE(a2dp, init);

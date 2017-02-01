@@ -43,6 +43,12 @@ namespace utils {
 
 	short poll_func(int fd, short events, int timeout);
 
+	NAN_METHOD(PollAsync);
+
+	NAN_METHOD(ReadAsync);
+
+	NAN_METHOD(ReadSync);
+
 }
 
 

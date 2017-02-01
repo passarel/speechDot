@@ -1,0 +1,40 @@
+
+
+	struct timeval *rtclock_get(struct timeval *tv) {
+		struct timespec ts;
+	#ifdef CLOCK_MONOTONIC
+	static bool no_monotonic = false;
+	if (clock_gettime(CLOCK_MONOTONIC, &ts) < 0)
+		no_monotonic = true;
+	if (no_monotonic)
+	#endif // CLOCK_MONOTONIC
+		assert(clock_gettime(CLOCK_REALTIME, &ts) == 0);
+		assert(tv);
+		tv->tv_sec = ts.tv_sec;
+		tv->tv_usec = ts.tv_nsec / ((unsigned long long) 1000ULL);
+		return tv;
+	}
+
+	uint64_t timeval_load(const struct timeval *tv) {
+		assert(tv);
+		return
+			(uint64_t) tv->tv_sec * ((uint64_t) 1000000ULL) + (uint64_t) tv->tv_usec;
+	}
+
+	uint64_t rtclock_now(void) {
+		struct timeval tv;
+		return timeval_load(rtclock_get(&tv));
+	}
+	
+	void make_blocking(int fd) {
+		int flags = fcntl(fd, F_GETFL); // get flags
+		if (fcntl(fd, F_SETFL, flags & ~O_NONBLOCK) < 0)
+			print_errno("fcntl");
+	}
+	
+	void enable_timestamps(int fd) {
+		int one = 1;
+		if (setsockopt(fd, SOL_SOCKET, SO_TIMESTAMP, &one, sizeof(one)) < 0)
+			print_errno("setsockopt");
+
+	}
