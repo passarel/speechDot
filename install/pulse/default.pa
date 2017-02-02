@@ -69,11 +69,11 @@ load-module module-udev-detect
 
 ### Automatically load driver modules for Bluetooth hardware
 .ifexists module-bluetooth-policy.so
-load-module module-bluetooth-policy
+#load-module module-bluetooth-policy
 .endif
 
 .ifexists module-bluetooth-discover.so
-load-module module-bluetooth-discover headset=native
+#load-module module-bluetooth-discover headset=native
 .endif
 
 ### Load several protocols

@@ -106,22 +106,12 @@ namespace a2dp {
 								sbc_args->in_buf, sbc_args->in_buf_len,
 								sbc_args->out_buf, sbc_args->out_buf_len,
 								&written);
-	        assert(written == 512);
 	        total_written += written;
-	        //printf("!!! ----- sbc_decode -> input_buf_len = %d \n", sbc_args->in_buf_len);
-	        //printf("!!! ----- sbc_decode -> output_buf_len = %d \n", sbc_args->out_buf_len);
-	        //printf("\n decoded = %d \n", decoded);
-	        //printf("\n written = %d \n", written);
 	        sbc_args->in_buf = (char*) sbc_args->in_buf + decoded;
 	        sbc_args->in_buf_len -= decoded;
 	        sbc_args->out_buf = (char*) sbc_args->out_buf + written;
 	        sbc_args->out_buf_len -= written;
 		}
-		//printf("\n total_written = %d \n", total_written);
-		//printf("\n sbc_args->in_buf_len = %d \n", sbc_args->in_buf_len);
-		assert(sbc_args->out_buf_len == 0);
-		assert(total_written == 2560);
-		// reset out_buf pointer to begin
 		sbc_args->out_buf -= total_written;
 		sbc_args->out_buf_len = total_written;
 	}
@@ -149,14 +139,7 @@ namespace a2dp {
 	}
 
 	NAN_METHOD(SbcNew) {
-		//printf("\n!! ----- GOT HERE ----- SbcNew() \n");
 		a2dp_sbc_t *config = reinterpret_cast<a2dp_sbc_t *>(UnwrapPointer(info[0]));
-		//printf("\n!! ----- SbcNew, config.frequency: %d \n", config->frequency);
-		//printf("!! ----- SbcNew, config.block_length: %d \n", config->block_length);
-		//printf("!! ----- SbcNew, config.allocation_method: %d \n", config->allocation_method);
-		//printf("!! ----- SbcNew, config.max_bitpool: %d \n", config->max_bitpool);
-		//printf("!! ----- SbcNew, config.subbands: %d \n", config->subbands);
-		//printf("!! ----- SbcNew, config.channel_mode: %d \n\n", config->channel_mode);
 		sbc_t *sbc = sbc_new(config);
 		info.GetReturnValue().Set(WrapPointer(sbc).ToLocalChecked());
 	}

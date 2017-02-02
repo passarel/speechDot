@@ -123,13 +123,13 @@ function Ofono() {
 	
 	self.setMicrophoneVolume = setMicrophoneVolume;
 	
-	self.setSiriEyesFreeModeOn = setSiriEyesFreeModeOn;
+	//self.setSiriEyesFreeModeOn = setSiriEyesFreeModeOn;
 	
 	self.answerCall = answerCall;
 	
 	self.hangupCall = hangupCall;
 	
-	self.establishAudioConnection = establishAudioConnection;
+	//self.establishAudioConnection = establishAudioConnection;
 	
 	ProcessManager.on('ofono_online', function(modemsData) {
 		self.calls = {};
@@ -158,29 +158,29 @@ function Ofono() {
 
 module.exports = new Ofono();
 
-function establishAudioConnection(bdaddr, onComplete) {
-	var card = HandsFreeAudioAgent.getCards()[bdaddr];
-	if (card) {
-		bus.getInterface('org.ofono', card.path, 'org.ofono.HandsfreeAudioCard', function(err, iface) {
-			if (notErr(err)) {
-				iface.Connect['timeout'] = 1000;
-				iface.Connect['finish'] = function() {
-					console.log('[success] HandsFreeAudioAgent.Connect - ' + bdaddr);
-					var args = Array.prototype.slice.call(arguments);
-					args.splice(0, 0, null); // there is no error
-					if (onComplete) onComplete.apply(null, args);
-				};
-				iface.Connect['error'] = function(err) {
-					console.log('[error] HandsFreeAudioAgent.Connect - ' + err);
-					if (onComplete) onComplete(err);
-				};
-				iface.Connect();
-			}
-		});
-	} else {
-		if (onComplete) onComplete('card not found');
-	}
-}
+//function establishAudioConnection(bdaddr, onComplete) {
+//	var card = HandsFreeAudioAgent.getCards()[bdaddr];
+//	if (card) {
+//		bus.getInterface('org.ofono', card.path, 'org.ofono.HandsfreeAudioCard', function(err, iface) {
+//			if (notErr(err)) {
+//				iface.Connect['timeout'] = 1000;
+//				iface.Connect['finish'] = function() {
+//					console.log('[success] HandsFreeAudioAgent.Connect - ' + bdaddr);
+//					var args = Array.prototype.slice.call(arguments);
+//					args.splice(0, 0, null); // there is no error
+//					if (onComplete) onComplete.apply(null, args);
+//				};
+//				iface.Connect['error'] = function(err) {
+//					console.log('[error] HandsFreeAudioAgent.Connect - ' + err);
+//					if (onComplete) onComplete(err);
+//				};
+//				iface.Connect();
+//			}
+//		});
+//	} else {
+//		if (onComplete) onComplete('card not found');
+//	}
+//}
 
 function answerCall(call, onSucc, onErr) {
 	if (call.State !== 'incoming') {
@@ -266,6 +266,7 @@ function setMicrophoneVolume(path, val, onComplete) {
 	});
 }
 
+/*
 function setSiriEyesFreeModeOn(path, onSucc, onErr) {
 	bus.getInterface('org.ofono', path, 'org.ofono.Siri', function(err, iface) {
 		if (notErr(err)) {
@@ -281,6 +282,7 @@ function setSiriEyesFreeModeOn(path, onSucc, onErr) {
 		}
 	});
 }
+*/
 
 function getVoiceRecognition(modem, onVal, onErr) {
 	bus.getInterface('org.ofono', modem.path, 'org.ofono.Handsfree', function(err, iface) {

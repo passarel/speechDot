@@ -151,15 +151,9 @@ function onSensoryData(data) {
  		onHeyCortana();
     }
 
- 	/*
- 	 * 
- 	 * I have to comment this out because it is causing the speechdot to hang and become unresponsive.
- 	 * There is also ALOT of false positive for Alexa.
- 	 * You MUST use arecord to use the mic, otherwise there will be issues with stability.
- 	 */
 	if (_data == 'alexa') {
-	        console.log('onAlexa');
-	        onAlexa();
+	    console.log('onAlexa');
+	    onAlexa();
 	}
  	
  	if (incomingCall && (_data === 'Jessina Dismiss')) {
@@ -214,14 +208,6 @@ function onSensoryData(data) {
  					sayThisTextAsync('failed to turn on pairing');
  				}
  			}
-// 			else {
-// 				Bluez.on('pairing_mode_on', function() {
-// 					playAudioResponseAsync('pairing_on.wav');
-// 				});
-// 				Bluez.on('pairing_mode_off', function() {
-// 					playAudioResponseAsync('pairing_off.wav');
-// 				});
-// 			}
  		})
  	}
 }

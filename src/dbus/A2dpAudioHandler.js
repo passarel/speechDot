@@ -1,7 +1,5 @@
 const DBus = require('../../lib/dbus');
-
 const a2dp = require('../../lib/bluetooth').a2dp;
-
 const dbusUtils = require('../utils/dbus_utils.js');
 const bus = dbusUtils.bus;
 const notErr = dbusUtils.notErr;
@@ -29,12 +27,15 @@ function add(self, mediaTransportPath, config, onComplete) {
 				const val = props[name];
 				console.log('[Bluez.MediaTransport1] PropertyChanged: ' + mediaTransportPath + ', ' + name + '=' + val);
 				console.log();
-				if (name === 'State' && val === 'pending') {
-					acquire(mediaTransportPath, function(err, args) {
-						if (notErr(err)) {
-							a2dp.play(args[0], args[1], config);
-						}
-					});
+				if (name === 'State') {
+					a2dp.setTransportState(mediaTransportPath, val);
+					if (val === 'pending') {
+						acquire(mediaTransportPath, function(err, args) {
+							if (notErr(err)) {
+								a2dp.play(mediaTransportPath, args[0], args[1], config);
+							}
+						});
+					}
 				}
 			});
 			if (onComplete) onComplete();
@@ -50,7 +51,7 @@ function acquire(mediaTransportPath, onComplete) {
 				if (onComplete) onComplete.apply(null, [null, args]);
 			};
 			iface.Acquire['error'] = function(err) {
-				console.log('[error] connect device(' + device.path + ') - ' + err);
+				console.log('[error] acquire transport(' + mediaTransportPath + ') - ' + err);
 				if (onComplete) onComplete(err);
 			};
 			iface.Acquire();
