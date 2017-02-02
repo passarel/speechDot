@@ -26,6 +26,7 @@ namespace Decoder {
 
 		// Get type of current value
 		switch(cur_type) {
+
 #define DBUS_BASIC_TYPE(arg_type, dbus_type, def_val, v8_type) \
 		case arg_type: \
 		{ \
@@ -33,6 +34,7 @@ namespace Decoder {
 			dbus_message_iter_get_basic(iter, &value); \
 			return scope.Escape(Nan::New<v8_type>(value)); \
 		}
+
 		DBUS_BASIC_TYPE(DBUS_TYPE_BOOLEAN, dbus_bool_t, false, Boolean)
 		DBUS_BASIC_TYPE(DBUS_TYPE_BYTE, unsigned char, 0, Number)
 		DBUS_BASIC_TYPE(DBUS_TYPE_INT16, dbus_int16_t, 0, Number)

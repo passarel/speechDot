@@ -12,8 +12,6 @@ namespace a2dp {
 		Nan::Persistent<Function> callback;
 	};
 
-	const int RTP_HEADER_SIZE = 13;
-
 	sbc_t *sbc_new(a2dp_sbc_t *config) {
 		sbc_t *sbc = new sbc_t;
 		sbc_init(sbc, 0L);
@@ -86,44 +84,36 @@ namespace a2dp {
             	printf("[error] sbc_new() -> unsupported block_length val: %d", config->block_length);
         }
         sbc->bitpool = config->max_bitpool;
-        printf("sbc_new() -> SBC parameters: allocation=%u, subbands=%u, blocks=%u, bitpool=%u, frequency=%u \n",
-                    sbc->allocation, sbc->subbands, sbc->blocks, sbc->bitpool, sbc->frequency);
+        printf("sbc_new() -> SBC parameters: allocation=%u, subbands=%u, blocks=%u, bitpool=%u",
+                    sbc->allocation, sbc->subbands, sbc->blocks, sbc->bitpool);
 		return sbc;
 	}
 
 	void decode_async(uv_work_t *req) {
 		sbc_args_t *sbc_args = static_cast<sbc_args_t *>(req->data);
-		// move pointer over the rtp header bytes
-		sbc_args->in_buf += RTP_HEADER_SIZE;
-		sbc_args->in_buf_len -= RTP_HEADER_SIZE;
+		assert(sbc_args->in_buf_len == 595);
 		sbc_args->out_buf_len = 2560;
 		sbc_args->out_buf = (char *) malloc(sbc_args->out_buf_len);
 		size_t total_written = 0;
-		for (int i=0; i<5; i++) {
+		while (sbc_args->in_buf_len > 0) {
 	        size_t written;
 	        ssize_t decoded;
 	        decoded = sbc_decode(sbc_args->sbc,
 								sbc_args->in_buf, sbc_args->in_buf_len,
 								sbc_args->out_buf, sbc_args->out_buf_len,
 								&written);
-	        assert(written == 512);
 	        total_written += written;
-	        //printf("!!! ----- sbc_decode -> input_buf_len = %d \n", sbc_args->in_buf_len);
-	        //printf("!!! ----- sbc_decode -> output_buf_len = %d \n", sbc_args->out_buf_len);
-	        //printf("\n decoded = %d \n", decoded);
-	        //printf("\n written = %d \n", written);
-	        sbc_args->in_buf = (char*) sbc_args->in_buf + decoded;
-	        sbc_args->in_buf_len -= decoded;
-	        sbc_args->out_buf = (char*) sbc_args->out_buf + written;
-	        sbc_args->out_buf_len -= written;
+	        assert(decoded == 119);
+	        assert(written == 512);
+            sbc_args->in_buf += decoded;
+            sbc_args->in_buf_len -= decoded;
+            sbc_args->out_buf += written;
+            sbc_args->in_buf_len -= written;
 		}
-		//printf("\n total_written = %d \n", total_written);
-		//printf("\n sbc_args->in_buf_len = %d \n", sbc_args->in_buf_len);
-		assert(sbc_args->out_buf_len == 0);
 		assert(total_written == 2560);
 		// reset out_buf pointer to begin
 		sbc_args->out_buf -= total_written;
-		sbc_args->out_buf_len = total_written;
+		sbc_args->out_buf_len = 2560;
 	}
 
 	void decode_async_after(uv_work_t *req, int status) {
@@ -143,20 +133,23 @@ namespace a2dp {
 		sbc_args->sbc = reinterpret_cast<sbc_t *>(UnwrapPointer(info[0]));
 		sbc_args->in_buf = (char *) node::Buffer::Data(info[1].As<v8::Object>());
 		sbc_args->in_buf_len = info[2]->Int32Value();
-		sbc_args->callback.Reset(info[3].As<Function>());
 		sbc_args->request.data = sbc_args;
 		uv_queue_work(uv_default_loop(), &sbc_args->request, decode_async, decode_async_after);
 	}
 
 	NAN_METHOD(SbcNew) {
-		//printf("\n!! ----- GOT HERE ----- SbcNew() \n");
+
+		printf("\n!! ----- GOT HERE ----- SbcNew() \n");
+
 		a2dp_sbc_t *config = reinterpret_cast<a2dp_sbc_t *>(UnwrapPointer(info[0]));
-		//printf("\n!! ----- SbcNew, config.frequency: %d \n", config->frequency);
-		//printf("!! ----- SbcNew, config.block_length: %d \n", config->block_length);
-		//printf("!! ----- SbcNew, config.allocation_method: %d \n", config->allocation_method);
-		//printf("!! ----- SbcNew, config.max_bitpool: %d \n", config->max_bitpool);
-		//printf("!! ----- SbcNew, config.subbands: %d \n", config->subbands);
-		//printf("!! ----- SbcNew, config.channel_mode: %d \n\n", config->channel_mode);
+
+		printf("\n!! ----- SbcNew, config.frequency: %d \n", config->frequency);
+		printf("!! ----- SbcNew, config.block_length: %d \n", config->block_length);
+		printf("!! ----- SbcNew, config.allocation_method: %d \n", config->allocation_method);
+		printf("!! ----- SbcNew, config.max_bitpool: %d \n", config->max_bitpool);
+		printf("!! ----- SbcNew, config.subbands: %d \n", config->subbands);
+		printf("!! ----- SbcNew, config.channel_mode: %d \n\n", config->channel_mode);
+
 		sbc_t *sbc = sbc_new(config);
 		info.GetReturnValue().Set(WrapPointer(sbc).ToLocalChecked());
 	}

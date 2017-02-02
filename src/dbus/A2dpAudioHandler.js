@@ -32,7 +32,7 @@ function add(self, mediaTransportPath, config, onComplete) {
 				if (name === 'State' && val === 'pending') {
 					acquire(mediaTransportPath, function(err, args) {
 						if (notErr(err)) {
-							a2dp.play(args[0], config);
+							a2dp.play(args[0], args[1], config);
 						}
 					});
 				}

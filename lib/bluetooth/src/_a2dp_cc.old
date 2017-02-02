@@ -270,6 +270,11 @@ namespace a2dp {
 	        }
 	        dbus_message_iter_next(&props);
 		}
+
+        for (int i=0; i<4; i++) {
+        	printf("\n !! GOT HERE ----- endpoint_select_configuration ----- config[%d]=%d \n", i, config[i]);
+        }
+
 	    r = dbus_message_new_method_return(m);
 		return r;
 	}

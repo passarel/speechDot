@@ -125,14 +125,6 @@ namespace hfpio {
 		info.GetReturnValue().Set(obj);
 	}
 
-	NAN_METHOD(CloseFd) {
-		int fd = info[0]->Int32Value();
-		if (shutdown(fd, SHUT_RDWR)<  0)
-			printf("Failed to shutdown socket\n");
-		if (close(fd)<  0)
-			printf("Failed to close socket\n");
-	}
-
 	NAN_METHOD(SetupSocket) {
 		int fd = info[0]->Int32Value();
 		make_nonblocking(fd);
@@ -160,9 +152,7 @@ namespace hfpio {
 		Nan::SetMethod(exports, "recvmsg", RecvmsgAsync);
 
 		Nan::SetMethod(exports, "poll", PollAsync);
-
 		Nan::SetMethod(exports, "closeFd", CloseFd);
-
 	}
 
 	NODE_MODULE(hfpio, init);

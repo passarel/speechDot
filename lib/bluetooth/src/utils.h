@@ -49,6 +49,8 @@ namespace utils {
 
 	NAN_METHOD(ReadSync);
 
+	NAN_METHOD(CloseFd);
+
 }
 
 

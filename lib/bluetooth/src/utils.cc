@@ -97,5 +97,13 @@ namespace utils {
 		int buf_len = info[2]->Int32Value();
 	    info.GetReturnValue().Set(read(fd, buf, buf_len));
 	}
+
+	NAN_METHOD(CloseFd) {
+		int fd = info[0]->Int32Value();
+		if (shutdown(fd, SHUT_RDWR)<  0)
+			printf("Failed to shutdown socket\n");
+		if (close(fd)<  0)
+			printf("Failed to close socket\n");
+	}
 }
 

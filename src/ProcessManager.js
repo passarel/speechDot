@@ -157,7 +157,7 @@ function startPulse(self) {
 	console.log('-------------------- PULSEAUDIO STARTUP BEGIN --------------------');
 	self.pulseChild.stderr.on('data', function(data) {
 		var _data = data.toString();
-		console.log(_data);
+		//console.log(_data);
 		if (_data.contains('Daemon startup complete')) {
 			console.log('-------------------- PULSEAUDIO STARTUP END --------------------');
 			console.log();
