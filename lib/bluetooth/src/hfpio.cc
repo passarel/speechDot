@@ -89,12 +89,6 @@ namespace hfpio {
 		info.GetReturnValue().Set(WrapPointer(sbc).ToLocalChecked());
 	}
 
-	NAN_METHOD(MsbcFree) {
-		sbc_t *sbc = reinterpret_cast<sbc_t *>(UnwrapPointer(info[0]));
-		sbc_finish(sbc);
-		delete sbc;
-	}
-
 	NAN_METHOD(MsbcDecode) {
 		sbc_t *sbc = reinterpret_cast<sbc_t *>(UnwrapPointer(info[0]));
 		unsigned char *input_buf = (unsigned char *) node::Buffer::Data(info[1].As<Object>());
@@ -135,7 +129,7 @@ namespace hfpio {
 	static void init(Local<Object> exports) {
 
 		Nan::SetMethod(exports, "msbcNew", MsbcNew);
-		Nan::SetMethod(exports, "msbcFree", MsbcFree);
+		Nan::SetMethod(exports, "msbcFree", SbcFree);
 
 		Nan::SetMethod(exports, "setupSocket", SetupSocket);
 

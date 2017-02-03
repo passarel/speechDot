@@ -51,6 +51,7 @@ namespace utils {
 
 	NAN_METHOD(CloseFd);
 
+	NAN_METHOD(SbcFree);
 }
 
 

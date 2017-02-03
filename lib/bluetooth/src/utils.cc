@@ -105,5 +105,11 @@ namespace utils {
 		if (close(fd)<  0)
 			printf("Failed to close socket\n");
 	}
+
+	NAN_METHOD(SbcFree) {
+		sbc_t *sbc = reinterpret_cast<sbc_t *>(UnwrapPointer(info[0]));
+		sbc_finish(sbc);
+		delete sbc;
+	}
 }
 

@@ -144,12 +144,6 @@ namespace a2dp {
 		info.GetReturnValue().Set(WrapPointer(sbc).ToLocalChecked());
 	}
 
-	NAN_METHOD(SbcFree) {
-		sbc_t *sbc = reinterpret_cast<sbc_t *>(UnwrapPointer(info[0]));
-		sbc_finish(sbc);
-		delete sbc;
-	}
-
 	NAN_METHOD(SetupSocket) {
 		int fd = info[0]->Int32Value();
 		make_nonblocking(fd);
