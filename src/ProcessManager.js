@@ -32,8 +32,6 @@ function ProcessManager() {
 		self.ofonoChild = null;
 		self.pulseChild = null;
 		self.sensoryChild = null;
-		self.isBluezDbusOnline = false;
-		self.isOfonoDbusOnline = false;
 		self.emit('sensory_offline');
 		self.emit('pulse_offline');
 		self.emit('ofono_offline');
@@ -47,7 +45,6 @@ function ProcessManager() {
 	
 	var startAll = function() {
 		startBluez(self);
-		startOfono(self);
 	}
 	
 	self.on('sensory_online', function() {
@@ -55,7 +52,7 @@ function ProcessManager() {
 	})
 	
 	self.on('bluez_online', function() {
-		startPulse(self);
+		startOfono(self);
 	});
 	
 	self.on('ofono_online', function() {
@@ -126,7 +123,6 @@ function pipeLogs(child, logFile) {
 function startBluez(self) {
 	self.bluezChild = spawn('/usr/local/libexec/bluetooth/bluetoothd', ['-d', '-n', '-C']);
 	self.bluezChild.on('exit', function() {
-		isBluezDbusOnline = false;
 		console.log('[error] bluezChild process has exited.');
 		self.reset();
 	});
@@ -138,7 +134,6 @@ function startBluez(self) {
 function startOfono(self) {
 	self.ofonoChild = spawn('/usr/local/sbin/ofonod', ['-d', '-n']);
 	self.ofonoChild.on('exit', function() {
-		isOfonoDbusOnline = false;
 		console.log('[error] ofonoChild process has exited.');
 		self.reset();
 	});
@@ -147,7 +142,6 @@ function startOfono(self) {
 }
 
 function startPulse(self) {
-	if (!self.isBluezDbusOnline || !self.isOfonoDbusOnline) return;
 	self.pulseChild = spawn('/usr/bin/pulseaudio', ['--log-level=info']);
 	self.pulseChild.on('exit', function() {
 		console.log('[error] pulseChild process has exited.');
@@ -155,10 +149,12 @@ function startPulse(self) {
 	});
 	console.log();
 	console.log('-------------------- PULSEAUDIO STARTUP BEGIN --------------------');
+	console.log();
 	self.pulseChild.stderr.on('data', function(data) {
 		var _data = data.toString();
 		//console.log(_data);
 		if (_data.contains('Daemon startup complete')) {
+			console.log();
 			console.log('-------------------- PULSEAUDIO STARTUP END --------------------');
 			console.log();
 			self.emit('pulse_online');
@@ -193,28 +189,24 @@ function spawnSensoryYesNo() {
 }
 
 function bluezDbusCheck(self) {
-	if (self.isBluezDbusOnline) return;
 	dbusUtils.getManagedObjects('org.bluez', function(managedObjects) {
-		self.isBluezDbusOnline = true;
 		console.log('Bluez dbus is online');
 		self.emit('bluez_online', managedObjects);
 	}, function() {
 		setTimeout(function() {
 			bluezDbusCheck(self);
-		}, 500);
+		}, 100);
 	});
 }
 
 function ofonoDbusCheck(self) {
-	if (self.isOfonoDbusOnline) return;
 	getModems(function(modems) {
-		self.isOfonoDbusOnline = true;
 		console.log('Ofono dbus is online');
 		self.emit('ofono_online', modems);
 	}, function() {
 		setTimeout(function() {
 			ofonoDbusCheck(self);
-		}, 500);
+		}, 100);
 	});
 }
 

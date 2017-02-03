@@ -229,6 +229,7 @@ function Bluez() {
 	ProcessManager.on('pulse_online', function(sensory) {
 		// pulse needs to be online to say when a device is connected
 		// otherwise its a race condition
+		console.log('executing tryConnectDevices...');
 		tryConnectDevices(self, Object.keys(self.adapters));
 	});
 }
@@ -466,6 +467,9 @@ function disconnectDevice(device, onComplete) {
 }
 
 function connectDevice(device, onComplete) {
+	console.log();
+	console.log('Trying to connect to device: ' + device.path);
+	console.log();
 	bus.getInterface('org.bluez', device.path, 'org.bluez.Device1', function(err, iface) {
 		if (notErr(err)) {
 			iface.Connect['timeout'] = 2000;
