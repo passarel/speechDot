@@ -29,14 +29,6 @@ namespace hfpio {
 		uv_queue_work(uv_default_loop(), &socket_io_args->request, write_async, write_async_after);
 	}
 
-	NAN_METHOD(WriteSync) {
-		int fd = info[0]->Int32Value();
-		unsigned char *buf = (unsigned char *) node::Buffer::Data(info[1].As<v8::Object>());
-		int buf_len = info[2]->Int32Value();
-		int written = write(fd, buf, buf_len);
-		info.GetReturnValue().Set(written);
-	}
-
 	void recvmsg_async(uv_work_t *req) {
 		socket_io_args_t *socket_io_args = static_cast<socket_io_args_t *>(req->data);
 		struct iovec iov;
@@ -137,7 +129,6 @@ namespace hfpio {
 		Nan::SetMethod(exports, "msbcEncode", MsbcEncode);
 
 		Nan::SetMethod(exports, "write", WriteAsync);
-		Nan::SetMethod(exports, "writeSync", WriteSync);
 
 		Nan::SetMethod(exports, "read", ReadAsync);
 		Nan::SetMethod(exports, "readSync", ReadSync);
