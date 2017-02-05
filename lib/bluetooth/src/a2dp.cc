@@ -2,16 +2,6 @@
 
 namespace a2dp {
 
-	struct sbc_args_t {
-		char *in_buf;
-		int in_buf_len;
-		char *out_buf;
-		int out_buf_len;
-		sbc_t *sbc;
-		uv_work_t request;
-		Nan::Persistent<Function> callback;
-	};
-
 	const int RTP_HEADER_SIZE = 13;
 
 	sbc_t *sbc_new(a2dp_sbc_t *config) {
@@ -96,8 +86,10 @@ namespace a2dp {
 		// move pointer over the rtp header bytes
 		sbc_args->in_buf += RTP_HEADER_SIZE;
 		sbc_args->in_buf_len -= RTP_HEADER_SIZE;
-		sbc_args->out_buf_len = 2560;
-		sbc_args->out_buf = (char *) malloc(sbc_args->out_buf_len);
+
+		//sbc_args->out_buf_len = 2560;
+		//sbc_args->out_buf = (char *) malloc(sbc_args->out_buf_len);
+
 		size_t total_written = 0;
 		for (int i=0; i<5; i++) {
 	        size_t written;
@@ -112,28 +104,32 @@ namespace a2dp {
 	        sbc_args->out_buf = (char*) sbc_args->out_buf + written;
 	        sbc_args->out_buf_len -= written;
 		}
-		sbc_args->out_buf -= total_written;
+		//sbc_args->out_buf -= total_written;
+		sbc_args->out_buf = (char*) sbc_args->out_buf - total_written;
 		sbc_args->out_buf_len = total_written;
 	}
 
 	void decode_async_after(uv_work_t *req, int status) {
 		sbc_args_t *sbc_args = static_cast<sbc_args_t *>(req->data);
 		Nan::HandleScope scope;
+		Local<Value> written = Nan::New<Int32>(sbc_args->out_buf_len);
 		Local<Function> cb = Nan::New(sbc_args->callback);
-		Local<Value> decodedData = Nan::NewBuffer(sbc_args->out_buf, sbc_args->out_buf_len).ToLocalChecked();
 		const unsigned argc = 1;
-		Local<Value> argv[argc] = { decodedData };
+		Local<Value> argv[argc] = { written };
 		Nan::MakeCallback(Nan::GetCurrentContext()->Global(), cb, argc, argv);
 		sbc_args->callback.Reset();
 		delete sbc_args;
 	}
 
 	NAN_METHOD(Decode) {
+
 		sbc_args_t *sbc_args = new sbc_args_t;
 		sbc_args->sbc = reinterpret_cast<sbc_t *>(UnwrapPointer(info[0]));
 		sbc_args->in_buf = (char *) node::Buffer::Data(info[1].As<v8::Object>());
 		sbc_args->in_buf_len = info[2]->Int32Value();
-		sbc_args->callback.Reset(info[3].As<Function>());
+		sbc_args->out_buf = (char *) node::Buffer::Data(info[3].As<v8::Object>());
+		sbc_args->out_buf_len = info[4]->Int32Value();
+		sbc_args->callback.Reset(info[5].As<Function>());
 		sbc_args->request.data = sbc_args;
 		uv_queue_work(uv_default_loop(), &sbc_args->request, decode_async, decode_async_after);
 	}

@@ -31,6 +31,16 @@ namespace utils {
 	    Nan::Persistent<Function> callback;
 	};
 
+	struct sbc_args_t {
+		char *in_buf;
+		int in_buf_len;
+		char *out_buf;
+		int out_buf_len;
+		sbc_t *sbc;
+		uv_work_t request;
+		Nan::Persistent<Function> callback;
+	};
+
 	void print_errno(const char *method_name);
 
 	void make_blocking(int fd);
