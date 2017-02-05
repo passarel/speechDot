@@ -39,7 +39,8 @@ namespace utils {
 		sbc_t *sbc;
 		uv_work_t request;
 		Nan::Persistent<Function> callback;
-
+		void (*decode_func)(sbc_args_t *);
+		void (*encode_func)(sbc_args_t *);
 		// optional, incase you want read and encode/decode in one go.
 		int fd;
 	};
@@ -55,6 +56,12 @@ namespace utils {
 	void set_priority(int fd, int priority);
 
 	short poll_func(int fd, short events, int timeout);
+
+	void read_and_decode_async(uv_work_t *req);
+
+	void read_and_decode_async_after(uv_work_t *req, int status);
+
+	void read_and_decode(const Nan::FunctionCallbackInfo<v8::Value>& info, void (*decode_func)(sbc_args_t *));
 
 	NAN_METHOD(PollAsync);
 

@@ -47,15 +47,15 @@ namespace hfpio {
 		return 0;
 	}
 
-	int audio_decode(sbc_t *sbc, char *data, int data_len, char *out, int out_len) {
-		assert(data_len == MTU_SIZE);
+	void decode(sbc_args_t *sbc_args) {
+		assert(sbc_args->in_buf_len == MTU_SIZE);
 		int total_written = 0;
-		for (int i = 0; i < data_len; i++) {
-			if (msbc_copy_machine(data[i]) == 60) {
+		for (int i = 0; i < sbc_args->in_buf_len; i++) {
+			if (msbc_copy_machine(sbc_args->in_buf[i]) == 60) {
 				int written = 0;
 				int decoded = 0;
 				char *to_decode = (char *) parser_buf + 2;
-				decoded = sbc_decode(sbc, to_decode, 57, out, out_len, (size_t *) &written);
+				decoded = sbc_decode(sbc_args->sbc, to_decode, 57, sbc_args->out_buf, sbc_args->out_buf_len, (size_t *) &written);
 				if (decoded > 0) {
 					total_written += written;
 				} else {
@@ -64,37 +64,11 @@ namespace hfpio {
 				parser_buf_len = 0;
 			}
 		}
-		return total_written;
+		sbc_args->out_buf_len = total_written;
 	}
 
-	void audio_decode_async(uv_work_t *req) {
-		sbc_args_t *sbc_args = static_cast<sbc_args_t *>(req->data);
-		sbc_args->out_buf_len = audio_decode(sbc_args->sbc,
-				sbc_args->in_buf, sbc_args->in_buf_len, sbc_args->out_buf, sbc_args->out_buf_len);
-	}
-
-	void audio_decode_async_after(uv_work_t *req, int status) {
-		sbc_args_t *sbc_args = static_cast<sbc_args_t *>(req->data);
-		Nan::HandleScope scope;
-		Local<Value> written = Nan::New<Int32>(sbc_args->out_buf_len);
-		Local<Function> cb = Nan::New(sbc_args->callback);
-		const unsigned argc = 1;
-		Local<Value> argv[argc] = { written };
-		Nan::MakeCallback(Nan::GetCurrentContext()->Global(), cb, argc, argv);
-		sbc_args->callback.Reset();
-		delete sbc_args;
-	}
-
-	NAN_METHOD(AudioDecodeAsync) {
-		sbc_args_t *sbc_args = new sbc_args_t;
-		sbc_args->sbc = reinterpret_cast<sbc_t *>(UnwrapPointer(info[0]));
-		sbc_args->in_buf = (char *) node::Buffer::Data(info[1].As<v8::Object>());
-		sbc_args->in_buf_len = info[2]->Int32Value();
-		sbc_args->out_buf = (char *) node::Buffer::Data(info[3].As<v8::Object>());
-		sbc_args->out_buf_len = info[4]->Int32Value();
-		sbc_args->callback.Reset(info[5].As<Function>());
-		sbc_args->request.data = sbc_args;
-		uv_queue_work(uv_default_loop(), &sbc_args->request, audio_decode_async, audio_decode_async_after);
+	NAN_METHOD(ReadAndDecode) {
+		read_and_decode(info, decode);
 	}
 
 	void write_async(uv_work_t *req) {
@@ -176,21 +150,6 @@ namespace hfpio {
 		info.GetReturnValue().Set(WrapPointer(sbc).ToLocalChecked());
 	}
 
-	NAN_METHOD(MsbcDecode) {
-		sbc_t *sbc = reinterpret_cast<sbc_t *>(UnwrapPointer(info[0]));
-		unsigned char *input_buf = (unsigned char *) node::Buffer::Data(info[1].As<Object>());
-		int input_buf_len = info[2]->Int32Value();
-		unsigned char *output_buf = (unsigned char *) node::Buffer::Data(info[3].As<Object>());
-		int output_buf_len = info[4]->Int32Value();
-		int written;
-		int decoded;
-		decoded = sbc_decode(sbc, input_buf, input_buf_len, output_buf, output_buf_len, (size_t *) &written);
-		v8::Local<Object> obj = Nan::New<Object>();
-		obj->Set(Nan::New("written").ToLocalChecked(), Nan::New<Integer>(written));
-		obj->Set(Nan::New("decoded").ToLocalChecked(), Nan::New<Integer>(decoded));
-		info.GetReturnValue().Set(obj);
-	}
-
 	NAN_METHOD(MsbcEncode) {
 		sbc_t *sbc = reinterpret_cast<sbc_t *>(UnwrapPointer(info[0]));
 		unsigned char *input_buf = (unsigned char *) node::Buffer::Data(info[1].As<v8::Object>());
@@ -220,13 +179,9 @@ namespace hfpio {
 
 		Nan::SetMethod(exports, "setupSocket", SetupSocket);
 
-		Nan::SetMethod(exports, "msbcDecode", MsbcDecode);
 		Nan::SetMethod(exports, "msbcEncode", MsbcEncode);
 
 		Nan::SetMethod(exports, "write", WriteAsync);
-
-		Nan::SetMethod(exports, "read", ReadAsync);
-		Nan::SetMethod(exports, "readSync", ReadSync);
 
 		Nan::SetMethod(exports, "recvmsgSync", RecvmsgSync);
 		Nan::SetMethod(exports, "recvmsg", RecvmsgAsync);
@@ -234,7 +189,8 @@ namespace hfpio {
 		Nan::SetMethod(exports, "poll", PollAsync);
 		Nan::SetMethod(exports, "closeFd", CloseFd);
 
-		Nan::SetMethod(exports, "audioDecode", AudioDecodeAsync);
+		Nan::SetMethod(exports, "readAndDecode", ReadAndDecode);
+
 		Nan::SetMethod(exports, "resetParserBuf", ResetParserBuf);
 	}
 

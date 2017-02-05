@@ -81,6 +81,42 @@ namespace utils {
 		delete socket_io_args;
 	}
 
+	void read_and_decode_async(uv_work_t *req) {
+		sbc_args_t *sbc_args = static_cast<sbc_args_t *>(req->data);
+		int bytes = read(sbc_args->fd, sbc_args->in_buf, sbc_args->in_buf_len);
+		if (bytes > 0) {
+			sbc_args->decode_func(sbc_args);
+		} else {
+			printf("Failed to read MTU_SIZE bytes from socket");
+		}
+	}
+
+	void read_and_decode_async_after(uv_work_t *req, int status) {
+		sbc_args_t *sbc_args = static_cast<sbc_args_t *>(req->data);
+		Nan::HandleScope scope;
+		Local<Value> written = Nan::New<Int32>(sbc_args->out_buf_len);
+		Local<Function> cb = Nan::New(sbc_args->callback);
+		const unsigned argc = 1;
+		Local<Value> argv[argc] = { written };
+		Nan::MakeCallback(Nan::GetCurrentContext()->Global(), cb, argc, argv);
+		sbc_args->callback.Reset();
+		delete sbc_args;
+	}
+
+	void read_and_decode(const Nan::FunctionCallbackInfo<v8::Value>& info, void (*decode_func)(sbc_args_t *)) {
+		sbc_args_t *sbc_args = new sbc_args_t;
+		sbc_args->fd = info[0]->Int32Value();
+		sbc_args->sbc = reinterpret_cast<sbc_t *>(UnwrapPointer(info[1]));
+		sbc_args->in_buf = (char *) node::Buffer::Data(info[2].As<v8::Object>());
+		sbc_args->in_buf_len = info[3]->Int32Value();
+		sbc_args->out_buf = (char *) node::Buffer::Data(info[4].As<v8::Object>());
+		sbc_args->out_buf_len = info[5]->Int32Value();
+		sbc_args->callback.Reset(info[6].As<Function>());
+		sbc_args->decode_func = decode_func;
+		sbc_args->request.data = sbc_args;
+		uv_queue_work(uv_default_loop(), &sbc_args->request, read_and_decode_async, read_and_decode_async_after);
+	}
+
 	NAN_METHOD(ReadAsync) {
 		socket_io_args_t *socket_io_args = new socket_io_args_t;
 		socket_io_args->fd = info[0]->Int32Value();

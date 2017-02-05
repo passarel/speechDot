@@ -79,27 +79,11 @@ function ProcessManager() {
 		});
 	};
 
-	/*
-	self.killOfono = function(onComplete) {
-		killOfono(self, onComplete);
-	}
-	*/
-	
 	// start all the processes
 	process.nextTick(function() {
 		self.reset();
 	});
 }
-
-/*
-function killOfono(self, onComplete) {
-	if (self.ofonoChild) {
-		self.ofonoChild.removeAllListeners();
-		appUtils.killAllProcessesWithNameSync(['ofonod']);	
-	}
-	if (onComplete) onComplete();
-}
-*/
 
 function clearLogs(logFiles) {
 	logFiles.forEach(function(logFile) {
@@ -132,7 +116,11 @@ function startBluez(self) {
 
 
 function startOfono(self) {
-	self.ofonoChild = spawn('/usr/local/sbin/ofonod', ['-d', '-n']);
+	if (fs.existsSync('/usr/local/sbin/ofonod')) {
+		self.ofonoChild = spawn('/usr/local/sbin/ofonod', ['-d', '-n']);
+	} else {
+		self.ofonoChild = spawn('/usr/sbin/ofonod', ['-d', '-n']);
+	}
 	self.ofonoChild.on('exit', function() {
 		console.log('[error] ofonoChild process has exited.');
 		self.reset();
