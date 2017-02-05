@@ -7,6 +7,10 @@ namespace hfpio {
 	uint8_t parser_buf[60];
 	int parser_buf_len = 0;
 
+	NAN_METHOD(ResetParserBuf) {
+		parser_buf_len = 0;
+	}
+
 	int copy(uint8_t byte) {
 		parser_buf[parser_buf_len] = byte;
 		parser_buf_len++;
@@ -43,7 +47,7 @@ namespace hfpio {
 		return 0;
 	}
 
-	int audio_decode(sbc_t *sbc, uint8_t *data, int data_len, uint8_t *out, int out_len) {
+	int audio_decode(sbc_t *sbc, char *data, int data_len, char *out, int out_len) {
 		assert(data_len == MTU_SIZE);
 		int total_written = 0;
 		for (int i = 0; i < data_len; i++) {
@@ -63,18 +67,34 @@ namespace hfpio {
 		return total_written;
 	}
 
-	NAN_METHOD(ResetParserBuf) {
-		parser_buf_len = 0;
+	void audio_decode_async(uv_work_t *req) {
+		sbc_args_t *sbc_args = static_cast<sbc_args_t *>(req->data);
+		sbc_args->out_buf_len = audio_decode(sbc_args->sbc,
+				sbc_args->in_buf, sbc_args->in_buf_len, sbc_args->out_buf, sbc_args->out_buf_len);
 	}
 
-	NAN_METHOD(AudioDecode) {
-		sbc_t *sbc = reinterpret_cast<sbc_t *>(UnwrapPointer(info[0]));
-		unsigned char *input_buf = (unsigned char *) node::Buffer::Data(info[1].As<Object>());
-		int input_buf_len = info[2]->Int32Value();
-		unsigned char *output_buf = (unsigned char *) node::Buffer::Data(info[3].As<Object>());
-		int output_buf_len = info[4]->Int32Value();
-		int written = audio_decode(sbc, input_buf, input_buf_len, output_buf, output_buf_len);
-		info.GetReturnValue().Set(written);
+	void audio_decode_async_after(uv_work_t *req, int status) {
+		sbc_args_t *sbc_args = static_cast<sbc_args_t *>(req->data);
+		Nan::HandleScope scope;
+		Local<Value> written = Nan::New<Int32>(sbc_args->out_buf_len);
+		Local<Function> cb = Nan::New(sbc_args->callback);
+		const unsigned argc = 1;
+		Local<Value> argv[argc] = { written };
+		Nan::MakeCallback(Nan::GetCurrentContext()->Global(), cb, argc, argv);
+		sbc_args->callback.Reset();
+		delete sbc_args;
+	}
+
+	NAN_METHOD(AudioDecodeAsync) {
+		sbc_args_t *sbc_args = new sbc_args_t;
+		sbc_args->sbc = reinterpret_cast<sbc_t *>(UnwrapPointer(info[0]));
+		sbc_args->in_buf = (char *) node::Buffer::Data(info[1].As<v8::Object>());
+		sbc_args->in_buf_len = info[2]->Int32Value();
+		sbc_args->out_buf = (char *) node::Buffer::Data(info[3].As<v8::Object>());
+		sbc_args->out_buf_len = info[4]->Int32Value();
+		sbc_args->callback.Reset(info[5].As<Function>());
+		sbc_args->request.data = sbc_args;
+		uv_queue_work(uv_default_loop(), &sbc_args->request, audio_decode_async, audio_decode_async_after);
 	}
 
 	void write_async(uv_work_t *req) {
@@ -214,7 +234,7 @@ namespace hfpio {
 		Nan::SetMethod(exports, "poll", PollAsync);
 		Nan::SetMethod(exports, "closeFd", CloseFd);
 
-		Nan::SetMethod(exports, "audioDecode", AudioDecode);
+		Nan::SetMethod(exports, "audioDecode", AudioDecodeAsync);
 		Nan::SetMethod(exports, "resetParserBuf", ResetParserBuf);
 	}
 

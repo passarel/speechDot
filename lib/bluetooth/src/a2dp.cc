@@ -86,10 +86,6 @@ namespace a2dp {
 		// move pointer over the rtp header bytes
 		sbc_args->in_buf += RTP_HEADER_SIZE;
 		sbc_args->in_buf_len -= RTP_HEADER_SIZE;
-
-		//sbc_args->out_buf_len = 2560;
-		//sbc_args->out_buf = (char *) malloc(sbc_args->out_buf_len);
-
 		size_t total_written = 0;
 		for (int i=0; i<5; i++) {
 	        size_t written;
@@ -99,13 +95,12 @@ namespace a2dp {
 								sbc_args->out_buf, sbc_args->out_buf_len,
 								&written);
 	        total_written += written;
-	        sbc_args->in_buf = (char*) sbc_args->in_buf + decoded;
+	        sbc_args->in_buf += decoded;
 	        sbc_args->in_buf_len -= decoded;
-	        sbc_args->out_buf = (char*) sbc_args->out_buf + written;
+	        sbc_args->out_buf += written;
 	        sbc_args->out_buf_len -= written;
 		}
-		//sbc_args->out_buf -= total_written;
-		sbc_args->out_buf = (char*) sbc_args->out_buf - total_written;
+		sbc_args->out_buf -= total_written;
 		sbc_args->out_buf_len = total_written;
 	}
 
@@ -122,7 +117,6 @@ namespace a2dp {
 	}
 
 	NAN_METHOD(Decode) {
-
 		sbc_args_t *sbc_args = new sbc_args_t;
 		sbc_args->sbc = reinterpret_cast<sbc_t *>(UnwrapPointer(info[0]));
 		sbc_args->in_buf = (char *) node::Buffer::Data(info[1].As<v8::Object>());
