@@ -81,8 +81,7 @@ namespace a2dp {
 		return sbc;
 	}
 
-	void decode_async(uv_work_t *req) {
-		sbc_args_t *sbc_args = static_cast<sbc_args_t *>(req->data);
+	void decode(sbc_args_t *sbc_args) {
 		// move pointer over the rtp header bytes
 		sbc_args->in_buf += RTP_HEADER_SIZE;
 		sbc_args->in_buf_len -= RTP_HEADER_SIZE;
@@ -104,7 +103,17 @@ namespace a2dp {
 		sbc_args->out_buf_len = total_written;
 	}
 
-	void decode_async_after(uv_work_t *req, int status) {
+	void read_and_decode_async(uv_work_t *req) {
+		sbc_args_t *sbc_args = static_cast<sbc_args_t *>(req->data);
+		int bytes = read(sbc_args->fd, sbc_args->in_buf, sbc_args->in_buf_len);
+		if (bytes > 0) {
+			decode(sbc_args);
+		} else {
+			printf("a2dp: Failed to read MTU_SIZE bytes from socket");
+		}
+	}
+
+	void read_and_decode_async_after(uv_work_t *req, int status) {
 		sbc_args_t *sbc_args = static_cast<sbc_args_t *>(req->data);
 		Nan::HandleScope scope;
 		Local<Value> written = Nan::New<Int32>(sbc_args->out_buf_len);
@@ -116,16 +125,17 @@ namespace a2dp {
 		delete sbc_args;
 	}
 
-	NAN_METHOD(Decode) {
+	NAN_METHOD(ReadAndDecode) {
 		sbc_args_t *sbc_args = new sbc_args_t;
-		sbc_args->sbc = reinterpret_cast<sbc_t *>(UnwrapPointer(info[0]));
-		sbc_args->in_buf = (char *) node::Buffer::Data(info[1].As<v8::Object>());
-		sbc_args->in_buf_len = info[2]->Int32Value();
-		sbc_args->out_buf = (char *) node::Buffer::Data(info[3].As<v8::Object>());
-		sbc_args->out_buf_len = info[4]->Int32Value();
-		sbc_args->callback.Reset(info[5].As<Function>());
+		sbc_args->fd = info[0]->Int32Value();
+		sbc_args->sbc = reinterpret_cast<sbc_t *>(UnwrapPointer(info[1]));
+		sbc_args->in_buf = (char *) node::Buffer::Data(info[2].As<v8::Object>());
+		sbc_args->in_buf_len = info[3]->Int32Value();
+		sbc_args->out_buf = (char *) node::Buffer::Data(info[4].As<v8::Object>());
+		sbc_args->out_buf_len = info[5]->Int32Value();
+		sbc_args->callback.Reset(info[6].As<Function>());
 		sbc_args->request.data = sbc_args;
-		uv_queue_work(uv_default_loop(), &sbc_args->request, decode_async, decode_async_after);
+		uv_queue_work(uv_default_loop(), &sbc_args->request, read_and_decode_async, read_and_decode_async_after);
 	}
 
 	NAN_METHOD(SbcNew) {
@@ -144,10 +154,8 @@ namespace a2dp {
 		Nan::SetMethod(exports, "sbcNew", SbcNew);
 		Nan::SetMethod(exports, "sbcFree", SbcFree);
 		Nan::SetMethod(exports, "setupSocket", SetupSocket);
-		Nan::SetMethod(exports, "read", ReadAsync);
-		Nan::SetMethod(exports, "decode", Decode);
+		Nan::SetMethod(exports, "readAndDecode", ReadAndDecode);
 		Nan::SetMethod(exports, "poll", PollAsync);
-		Nan::SetMethod(exports, "closeFd", CloseFd);
 	}
 
 	NODE_MODULE(a2dp, init);

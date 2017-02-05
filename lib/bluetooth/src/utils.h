@@ -39,6 +39,9 @@ namespace utils {
 		sbc_t *sbc;
 		uv_work_t request;
 		Nan::Persistent<Function> callback;
+
+		// optional, incase you want read and encode/decode in one go.
+		int fd;
 	};
 
 	void print_errno(const char *method_name);
