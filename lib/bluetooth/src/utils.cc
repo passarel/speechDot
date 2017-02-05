@@ -64,23 +64,6 @@ namespace utils {
 		uv_queue_work(uv_default_loop(), &poll_args->request, poll_async, poll_async_after);
 	}
 
-	void read_async(uv_work_t *req) {
-		socket_io_args_t *socket_io_args = static_cast<socket_io_args_t *>(req->data);
-		socket_io_args->return_val = read(socket_io_args->fd, socket_io_args->buf, socket_io_args->buf_len);
-	}
-
-	void read_async_after(uv_work_t *req, int status) {
-		socket_io_args_t *socket_io_args = static_cast<socket_io_args_t *>(req->data);
-		Nan::HandleScope scope;
-		Local<Value> bytesRead = Nan::New<Int32>(socket_io_args->return_val);
-		Local<Function> cb = Nan::New(socket_io_args->callback);
-		const unsigned argc = 1;
-		Local<Value> argv[argc] = { bytesRead };
-		Nan::MakeCallback(Nan::GetCurrentContext()->Global(), cb, argc, argv);
-		socket_io_args->callback.Reset();
-		delete socket_io_args;
-	}
-
 	void read_and_decode_async(uv_work_t *req) {
 		sbc_args_t *sbc_args = static_cast<sbc_args_t *>(req->data);
 		int bytes = read(sbc_args->fd, sbc_args->in_buf, sbc_args->in_buf_len);
@@ -115,23 +98,6 @@ namespace utils {
 		sbc_args->decode_func = decode_func;
 		sbc_args->request.data = sbc_args;
 		uv_queue_work(uv_default_loop(), &sbc_args->request, read_and_decode_async, read_and_decode_async_after);
-	}
-
-	NAN_METHOD(ReadAsync) {
-		socket_io_args_t *socket_io_args = new socket_io_args_t;
-		socket_io_args->fd = info[0]->Int32Value();
-		socket_io_args->buf = (char *) node::Buffer::Data(info[1].As<v8::Object>());
-		socket_io_args->buf_len = info[2]->Int32Value();
-		socket_io_args->callback.Reset(info[3].As<Function>());
-		socket_io_args->request.data = socket_io_args;
-		uv_queue_work(uv_default_loop(), &socket_io_args->request, read_async, read_async_after);
-	}
-
-	NAN_METHOD(ReadSync) {
-		int fd = info[0]->Int32Value();
-		unsigned char *buf = (unsigned char *) node::Buffer::Data(info[1].As<v8::Object>());
-		int buf_len = info[2]->Int32Value();
-	    info.GetReturnValue().Set(read(fd, buf, buf_len));
 	}
 
 	NAN_METHOD(CloseFd) {
