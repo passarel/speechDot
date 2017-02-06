@@ -3,4 +3,4 @@
 export builddir_name ?= ./build/.
 .PHONY: all
 all:
-	$(MAKE) hfpio a2dp
+	$(MAKE) a2dp hfpio

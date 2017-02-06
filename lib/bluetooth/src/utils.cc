@@ -53,7 +53,7 @@ namespace utils {
 		delete poll_args;
 	}
 
-	NAN_METHOD(PollAsync) {
+	NAN_METHOD(Poll) {
 		poll_args_t *poll_args = new poll_args_t;
 		poll_args->fd = info[0]->Int32Value();
 		poll_args->events = (short) info[1]->Int32Value();

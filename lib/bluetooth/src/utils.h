@@ -63,11 +63,7 @@ namespace utils {
 
 	void read_and_decode(const Nan::FunctionCallbackInfo<v8::Value>& info, void (*decode_func)(sbc_args_t *));
 
-	NAN_METHOD(PollAsync);
-
-	NAN_METHOD(ReadAsync);
-
-	NAN_METHOD(ReadSync);
+	NAN_METHOD(Poll);
 
 	NAN_METHOD(CloseFd);
 

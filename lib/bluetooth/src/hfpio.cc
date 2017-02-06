@@ -3,12 +3,25 @@
 namespace hfpio {
 
 	const int MTU_SIZE = 48;
+	const int CAPTURE_SIZE = 240;
+
+	char encoder_buf[CAPTURE_SIZE];
+	int encoder_buff_len = 0;
+
+	char sntable[4] = { 0x08, 0x38, 0xC8, 0xF8 };
+	int sn = 0;
+
+	char write_buf[MTU_SIZE];
+	int write_buf_len = 0;
 
 	char parser_buf[60];
 	int parser_buf_len = 0;
 
-	NAN_METHOD(ResetParserBuf) {
+	NAN_METHOD(ResetBuffers) {
 		parser_buf_len = 0;
+		write_buf_len = 0;
+		encoder_buff_len = 0;
+		sn = 0;
 	}
 
 	int copy(char byte) {
@@ -71,13 +84,7 @@ namespace hfpio {
 		read_and_decode(info, decode);
 	}
 
-	const int CAPTURE_SIZE = 240;
-	char encoder_buf[CAPTURE_SIZE];
-	int encoder_buff_len = 0;
-	char sntable[4] = { 0x08, 0x38, 0xC8, 0xF8 };
-	int sn = 0;
-
-	void audio_encode(sbc_args_t *sbc_args) {
+	void encode(sbc_args_t *sbc_args) {
 		int total_written = 0;
 		for (int i = 0; i < sbc_args->in_buf_len; i++) {
 			encoder_buf[encoder_buff_len] = sbc_args->in_buf[i];
@@ -100,33 +107,41 @@ namespace hfpio {
 		sbc_args->out_buf_len = total_written;
 	}
 
-	void audio_encode_async(uv_work_t *req) {
-		sbc_args_t *sbc_args = static_cast<sbc_args_t *>(req->data);
-		audio_encode(sbc_args);
+	int mtu_write(int fd, char *buf, int buf_len) {
+		int total_written = 0;
+		for (int j = 0; j < buf_len; j++) {
+			write_buf[write_buf_len] = buf[j];
+			write_buf_len++;
+			if (write_buf_len == MTU_SIZE) {
+				int written = write(fd, write_buf, write_buf_len);
+				total_written += written;
+				write_buf_len = 0; // reset buf
+			}
+		}
+		return total_written;
 	}
 
-	void audio_encode_async_after(uv_work_t *req, int status) {
+	void encode_and_write_async(uv_work_t *req) {
 		sbc_args_t *sbc_args = static_cast<sbc_args_t *>(req->data);
-		Nan::HandleScope scope;
-		Local<Value> data = Nan::NewBuffer(sbc_args->out_buf, sbc_args->out_buf_len).ToLocalChecked();
-		Local<Function> cb = Nan::New(sbc_args->callback);
-		const unsigned argc = 1;
-		Local<Value> argv[argc] = { data };
-		Nan::MakeCallback(Nan::GetCurrentContext()->Global(), cb, argc, argv);
-		sbc_args->callback.Reset();
-		delete sbc_args;
+		encode(sbc_args);
+		sbc_args->out_buf_len = mtu_write(sbc_args->fd, sbc_args->out_buf, sbc_args->out_buf_len);
 	}
 
-	NAN_METHOD(AudioEncode) {
+	void encode_and_write_async_after(uv_work_t *req, int status) {
+		read_and_decode_async_after(req, status); //DontRepeatYourself -- Code is the same/compatible
+	}
+
+	NAN_METHOD(EncodeAndWrite) {
 		sbc_args_t *sbc_args = new sbc_args_t;
-		sbc_args->sbc = reinterpret_cast<sbc_t *>(UnwrapPointer(info[0]));
-		sbc_args->in_buf = (char *) node::Buffer::Data(info[1].As<v8::Object>());
-		sbc_args->in_buf_len = info[2]->Int32Value();
+		sbc_args->fd = info[0]->Int32Value();
+		sbc_args->sbc = reinterpret_cast<sbc_t *>(UnwrapPointer(info[1]));
+		sbc_args->in_buf = (char *) node::Buffer::Data(info[2].As<v8::Object>());
+		sbc_args->in_buf_len = info[3]->Int32Value();
 		sbc_args->out_buf_len = ((encoder_buff_len + sbc_args->in_buf_len)/240)*60;
 		sbc_args->out_buf = (char *) malloc(sbc_args->out_buf_len);
-		sbc_args->callback.Reset(info[3].As<Function>());
+		sbc_args->callback.Reset(info[4].As<Function>());
 		sbc_args->request.data = sbc_args;
-		uv_queue_work(uv_default_loop(), &sbc_args->request, audio_encode_async, audio_encode_async_after);
+		uv_queue_work(uv_default_loop(), &sbc_args->request, encode_and_write_async, encode_and_write_async_after);
 	}
 
 	void write_async(uv_work_t *req) {
@@ -156,38 +171,6 @@ namespace hfpio {
 		uv_queue_work(uv_default_loop(), &socket_io_args->request, write_async, write_async_after);
 	}
 
-	char write_buf[MTU_SIZE];
-	int write_buf_len = 0;
-
-	NAN_METHOD(ResetWriteBuf) {
-		write_buf_len = 0;
-	}
-
-	void mtu_write_async(uv_work_t *req) {
-		socket_io_args_t *socket_io_args = static_cast<socket_io_args_t *>(req->data);
-		int total_written = 0;
-		for (int j = 0; j < socket_io_args->buf_len; j++) {
-			write_buf[write_buf_len] = socket_io_args->buf[j];
-			write_buf_len++;
-			if (write_buf_len == MTU_SIZE) {
-				int written = write(socket_io_args->fd, write_buf, write_buf_len);
-				total_written += written;
-				write_buf_len = 0; // reset buf
-			}
-		}
-		socket_io_args->return_val = total_written;
-	}
-
-	NAN_METHOD(MtuWriteAsync) {
-		socket_io_args_t *socket_io_args = new socket_io_args_t;
-		socket_io_args->fd = info[0]->Int32Value();
-		socket_io_args->buf = (char *) node::Buffer::Data(info[1].As<v8::Object>());
-		socket_io_args->buf_len = info[2]->Int32Value();
-		socket_io_args->callback.Reset(info[3].As<Function>());
-		socket_io_args->request.data = socket_io_args;
-		uv_queue_work(uv_default_loop(), &socket_io_args->request, mtu_write_async, write_async_after);
-	}
-
 	void recvmsg_async(uv_work_t *req) {
 		socket_io_args_t *socket_io_args = static_cast<socket_io_args_t *>(req->data);
 		struct iovec iov;
@@ -211,7 +194,7 @@ namespace hfpio {
 		delete socket_io_args;
 	}
 
-	NAN_METHOD(RecvmsgAsync) {
+	NAN_METHOD(Recvmsg) {
 		socket_io_args_t *socket_io_args = new socket_io_args_t;
 		socket_io_args->fd = info[0]->Int32Value();
 		socket_io_args->buf = (char *) node::Buffer::Data(info[1].As<v8::Object>());
@@ -221,38 +204,10 @@ namespace hfpio {
 		uv_queue_work(uv_default_loop(), &socket_io_args->request, recvmsg_async, recvmsg_async_after);
 	}
 
-	NAN_METHOD(RecvmsgSync) {
-		int fd = info[0]->Int32Value();
-		struct iovec iov;
-		struct msghdr m;
-		m.msg_iov = &iov;
-		m.msg_iovlen = 1;
-		unsigned char *buf = (unsigned char *) node::Buffer::Data(info[1].As<v8::Object>());
-		int buf_len = info[2]->Int32Value();
-	    iov.iov_base = buf;
-	    iov.iov_len = buf_len;
-	    info.GetReturnValue().Set(recvmsg(fd, &m, 0));
-	}
-
 	NAN_METHOD(MsbcNew) {
 		sbc_t *sbc = new sbc_t;
 		sbc_init_msbc(sbc, 0L);
 		info.GetReturnValue().Set(WrapPointer(sbc).ToLocalChecked());
-	}
-
-	NAN_METHOD(MsbcEncode) {
-		sbc_t *sbc = reinterpret_cast<sbc_t *>(UnwrapPointer(info[0]));
-		unsigned char *input_buf = (unsigned char *) node::Buffer::Data(info[1].As<v8::Object>());
-		int input_buf_len = info[2]->Int32Value();
-		unsigned char *output_buf = (unsigned char *) node::Buffer::Data(info[3].As<v8::Object>());
-		int output_buf_len = info[4]->Int32Value();
-		int written;
-		int encoded;
-		encoded = sbc_encode(sbc, input_buf, input_buf_len, output_buf, output_buf_len, (ssize_t *) &written);
-		v8::Local<v8::Object> obj = Nan::New<v8::Object>();
-		obj->Set(Nan::New("written").ToLocalChecked(), Nan::New<v8::Integer>(written));
-		obj->Set(Nan::New("encoded").ToLocalChecked(), Nan::New<v8::Integer>(encoded));
-		info.GetReturnValue().Set(obj);
 	}
 
 	NAN_METHOD(SetupSocket) {
@@ -263,29 +218,21 @@ namespace hfpio {
 	}
 
 	static void init(Local<Object> exports) {
-
 		Nan::SetMethod(exports, "msbcNew", MsbcNew);
 		Nan::SetMethod(exports, "msbcFree", SbcFree);
 
 		Nan::SetMethod(exports, "setupSocket", SetupSocket);
-
-		Nan::SetMethod(exports, "msbcEncode", MsbcEncode);
-
-		Nan::SetMethod(exports, "mtuWrite", MtuWriteAsync);
 		Nan::SetMethod(exports, "write", WriteAsync);
-		Nan::SetMethod(exports, "resetWriteBuf", ResetWriteBuf);
 
-		Nan::SetMethod(exports, "recvmsgSync", RecvmsgSync);
-		Nan::SetMethod(exports, "recvmsg", RecvmsgAsync);
+		Nan::SetMethod(exports, "recvmsg", Recvmsg);
 
-		Nan::SetMethod(exports, "poll", PollAsync);
+		Nan::SetMethod(exports, "poll", Poll);
 		Nan::SetMethod(exports, "closeFd", CloseFd);
 
 		Nan::SetMethod(exports, "readAndDecode", ReadAndDecode);
+		Nan::SetMethod(exports, "encodeAndWrite", EncodeAndWrite);
 
-		Nan::SetMethod(exports, "resetParserBuf", ResetParserBuf);
-
-		Nan::SetMethod(exports, "audioEncode", AudioEncode);
+		Nan::SetMethod(exports, "resetBuffers", ResetBuffers);
 	}
 
 	NODE_MODULE(hfpio, init);

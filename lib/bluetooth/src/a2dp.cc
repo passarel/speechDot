@@ -124,7 +124,7 @@ namespace a2dp {
 		Nan::SetMethod(exports, "sbcFree", SbcFree);
 		Nan::SetMethod(exports, "setupSocket", SetupSocket);
 		Nan::SetMethod(exports, "readAndDecode", ReadAndDecode);
-		Nan::SetMethod(exports, "poll", PollAsync);
+		Nan::SetMethod(exports, "poll", Poll);
 	}
 
 	NODE_MODULE(a2dp, init);
