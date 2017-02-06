@@ -87,17 +87,18 @@ namespace a2dp {
 		sbc_args->in_buf_len -= RTP_HEADER_SIZE;
 		size_t total_written = 0;
 		for (int i=0; i<5; i++) {
-	        size_t written;
-	        ssize_t decoded;
-	        decoded = sbc_decode(sbc_args->sbc,
-								sbc_args->in_buf, sbc_args->in_buf_len,
-								sbc_args->out_buf, sbc_args->out_buf_len,
-								&written);
-	        total_written += written;
-	        sbc_args->in_buf += decoded;
-	        sbc_args->in_buf_len -= decoded;
-	        sbc_args->out_buf += written;
-	        sbc_args->out_buf_len -= written;
+	        int written = 0;
+	        int decoded = sbc_decode(sbc_args->sbc, sbc_args->in_buf, sbc_args->in_buf_len,
+								sbc_args->out_buf, sbc_args->out_buf_len, (size_t *) &written);
+	        if (decoded > 0) {
+		        total_written += written;
+		        sbc_args->in_buf += decoded;
+		        sbc_args->in_buf_len -= decoded;
+		        sbc_args->out_buf += written;
+		        sbc_args->out_buf_len -= written;
+	        } else {
+	        	printf("a2dp: Error while decoding, error_code -> %d \n", decoded);
+	        }
 		}
 		sbc_args->out_buf -= total_written;
 		sbc_args->out_buf_len = total_written;

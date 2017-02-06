@@ -66,13 +66,12 @@ namespace hfpio {
 		for (int i = 0; i < sbc_args->in_buf_len; i++) {
 			if (msbc_copy_machine(sbc_args->in_buf[i]) == 60) {
 				int written = 0;
-				int decoded = 0;
 				char *to_decode = (char *) parser_buf + 2;
-				decoded = sbc_decode(sbc_args->sbc, to_decode, 57, sbc_args->out_buf, sbc_args->out_buf_len, (size_t *) &written);
+				int decoded = sbc_decode(sbc_args->sbc, to_decode, 57, sbc_args->out_buf, sbc_args->out_buf_len, (size_t *) &written);
 				if (decoded > 0) {
 					total_written += written;
 				} else {
-					printf("hfpio: Error while decoding, decoded -> %d \n", decoded);
+					printf("hfpio: Error while decoding, error_code -> %d \n", decoded);
 				}
 				parser_buf_len = 0;
 			}
@@ -96,10 +95,14 @@ namespace hfpio {
 				encode_out[59] = 0xff;
 				sn = (sn + 1) % 4;
 				int written = 0;
-				sbc_encode(sbc_args->sbc, encoder_buf, CAPTURE_SIZE, encode_out+2, 57, (ssize_t *) &written);
-				assert(written == 57);
-				total_written += 60;
-				sbc_args->out_buf += 60;
+				int encoded = sbc_encode(sbc_args->sbc, encoder_buf, CAPTURE_SIZE, encode_out+2, 57, (ssize_t *) &written);
+				if (encoded > 0) {
+					assert(written == 57);
+					total_written += 60;
+					sbc_args->out_buf += 60;
+				} else {
+					printf("hfpio: Error while encoding, error_code -> %d \n", encoded);
+				}
 				encoder_buff_len = 0;
 			}
 		}
