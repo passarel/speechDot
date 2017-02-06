@@ -70,7 +70,7 @@ namespace utils {
 		if (bytes > 0) {
 			sbc_args->decode_func(sbc_args);
 		} else {
-			printf("Failed to read MTU_SIZE bytes from socket");
+			printf("Failed to read MTU_SIZE bytes from socket \n");
 		}
 	}
 
