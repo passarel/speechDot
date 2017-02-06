@@ -128,6 +128,7 @@ namespace hfpio {
 		sbc_args_t *sbc_args = static_cast<sbc_args_t *>(req->data);
 		encode(sbc_args);
 		sbc_args->out_buf_len = mtu_write(sbc_args->fd, sbc_args->out_buf, sbc_args->out_buf_len);
+		free(sbc_args->out_buf);
 	}
 
 	void encode_and_write_async_after(uv_work_t *req, int status) {
