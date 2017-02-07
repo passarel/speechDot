@@ -1,21 +1,18 @@
-const spawn = require('child_process').spawn;
-const execSync = require('child_process').execSync;
-const exec = require('child_process').exec;
-const appUtils = require('./src/utils/app_utils.js');
 const audioUtils = require('./src/utils/audio_utils.js');
-const Ofono = require('./src/dbus/Ofono.js');
-const Bluez = require('./src/dbus/Bluez.js');
-const path = require('path');
-const bash_scripts_path = path.resolve(__dirname, 'bash_scripts');
-const ProcessManager = require('./src/ProcessManager.js');
-const AlexaAvs = require('./alexa/client/AlexaAvs.js');
-
 const playAudioResponseAsync = audioUtils.playAudioResponseAsync;
 const playAudioResponse = audioUtils.playAudioResponse;
 const sayThisNameAsync = audioUtils.sayThisNameAsync;
 const sayThisName = audioUtils.sayThisName;
 const sayThisTextAsync = audioUtils.sayThisTextAsync;
 const sayThisText = audioUtils.sayThisText;
+const setLocalSpeakerVolume = audioUtils.setLocalSpeakerVolume;
+const setLocalMicVolume = audioUtils.setLocalMicVolume;
+
+const appUtils = require('./src/utils/app_utils.js');
+const Ofono = require('./src/dbus/Ofono.js');
+const Bluez = require('./src/dbus/Bluez.js');
+const AlexaAvs = require('./alexa/client/AlexaAvs.js');
+const ProcessManager = require('./src/ProcessManager.js');
 
 var activeModem = null;
 var incomingCall = null;
@@ -26,7 +23,7 @@ var yesNoConfirmation = null;
 var isReady = false;
 
 ProcessManager.on('sensory_online', function(sensory) {
-	setLocalSpeakerVolume(45);
+	setLocalSpeakerVolume(15);
 	setLocalMicVolume(85);
 	addOfonoHandlers();
 	sensory.stderr.on('data', onSensoryData);
@@ -187,7 +184,7 @@ function onSensoryData(data) {
  	if (!isVoiceRecognitionOn && _data === 'Jessina Shutdown') {
  		getConfirmation(function() {
  			playAudioResponse('shutting_down.wav');
- 			execSync('shutdown now');
+ 			appUtils.shutdownNow();
  		}, function() {
  			playAudioResponseAsync('shutdown_canceled.wav');
  		}, 'shutdown');
@@ -243,15 +240,7 @@ function getConfirmation(onYes, onNo, eventName) {
 	}, 2000);
 }
 
-function setLocalSpeakerVolume(val) {
-	execSync('amixer set Master ' + val + '% -q');
-	console.log('Local speaker volume set to ' + val + '%');
-}
 
-function setLocalMicVolume(val) {
-	execSync('amixer set Capture ' + val + '% -q');
-	console.log('Local mic volume set to ' + val + '%');
-}
 
 function onHeySiri() {
 	Ofono.getModems(function(modems) {
@@ -340,23 +329,27 @@ function setHfpVolume(modem, volume, onComplete) {
 
 function tryAcquireVoiceRecognition(modem) {
 
-	var setVoiceRecognitionOn = function() {
-		Ofono.setVoiceRecognitionOn(modem.path, function() {
-			console.log('setVoiceRecognitionOn - SUCCESS');
-		}, function(err) {
-			console.log('setVoiceRecognitionOn - ERR: ' + err);
+	const setVoiceRecognitionOn = function() {
+		Ofono.setVoiceRecognitionOn(modem.path, function(err) {
+			if (err) {
+				console.log('setVoiceRecognitionOn - ERR: ' + err);
+			} else {
+				console.log('setVoiceRecognitionOn - SUCCESS');
+			}
 		});
 	}
 	
-	var setVoiceRecognitionOffAndThenOn = function() {
+	const setVoiceRecognitionOffAndThenOn = function() {
 		console.log('setVoiceRecognitionOffAndThenOn...');
-		Ofono.setVoiceRecognitionOff(modem.path, function() {
-			console.log('setVoiceRecognitionOff - SUCCESS');
-			setTimeout(function() {
-				setVoiceRecognitionOn();
-			}, 500);
-		}, function(err) {
-			console.log('setVoiceRecognitionOff - ERR: ' + err);
+		Ofono.setVoiceRecognitionOff(modem.path, function(err) {
+			if (err) {
+				console.log('setVoiceRecognitionOff - ERR: ' + err);
+			} else {
+				console.log('setVoiceRecognitionOff - SUCCESS');
+				setTimeout(function() {
+					setVoiceRecognitionOn();
+				}, 500);
+			}
 		});
 	}
 	
@@ -371,19 +364,21 @@ function tryAcquireVoiceRecognition(modem) {
 			// sometimes its slow to update VoiceRecognition
 			// retry in one second.
 			setTimeout(function() {
-				Ofono.getVoiceRecognition(modem, function(val) {
-					console.log('got VoiceRecognition val from modem: ' + val);
-					isVoiceRecognitionOn = val;
-					if (!isVoiceRecognitionOn) {
-						activeModem = null;
-						setVoiceRecognitionOn();
+				Ofono.getVoiceRecognition(modem, function(err, val) {
+					if (err) {
+						console.log('failed to get VoiceRecognition: ' + err);
 					} else {
-						if (new Date().getTime() >= voiceRecognitionTimeout) {
-							setVoiceRecognitionOffAndThenOn();
+						console.log('got VoiceRecognition val from modem: ' + val);
+						isVoiceRecognitionOn = val;
+						if (!isVoiceRecognitionOn) {
+							activeModem = null;
+							setVoiceRecognitionOn();
+						} else {
+							if (new Date().getTime() >= voiceRecognitionTimeout) {
+								setVoiceRecognitionOffAndThenOn();
+							}
 						}
 					}
-				}, function(err) {
-					console.log('failed to get VoiceRecognition: ' + err);
 				});
 			}, 1200);
 		} else {

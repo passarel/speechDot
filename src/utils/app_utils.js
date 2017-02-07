@@ -11,9 +11,15 @@ const path = require('path');
 const python_scripts_path = path.resolve(__dirname, '../../python_scripts');
 	
 module.exports = {
-	hasPulseAudioCardForDevice: hasPulseAudioCardForDevice,
-	killAllProcessesWithNameSync: killAllProcessesWithNameSync
-}
+		
+		hasPulseAudioCardForDevice: hasPulseAudioCardForDevice,
+		
+		killAllProcessesWithNameSync: killAllProcessesWithNameSync,
+		
+		shutdownNow: function() {
+			execSync('shutdown now');
+		}
+	}
 	
 function hasPulseAudioCardForDevice(bdaddr, onTrue) {
 	console.log('Checking pulseaudio cards for device: ' + bdaddr);

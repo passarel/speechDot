@@ -1,9 +1,5 @@
 const DBus = require('../../lib/dbus');
-
 const hfpio = require('../../lib/bluetooth').hfpio;
-
-const spawn = require('child_process').spawn;
-const appUtils = require('../utils/app_utils.js');
 const dbusUtils = require('../utils/dbus_utils.js');
 
 const bus = dbusUtils.bus;
@@ -49,7 +45,7 @@ function HandsFreeAudioAgent() {
 		return self.cards;
 	}
 	
-	var addCardAddedHandler = function(onComplete) {
+	const addCardAddedHandler = function(onComplete) {
 		removeAllHandlersForSignal('org.ofono', '/', 'org.ofono.HandsfreeAudioManager', 'CardAdded', function() {
 			addSignalHandler('org.ofono', '/', 'org.ofono.HandsfreeAudioManager', 'CardAdded', function(path, card) {
 				card.path = path;
@@ -61,7 +57,7 @@ function HandsFreeAudioAgent() {
 		});
 	}
 
-	var addCardRemovedHandler = function(onComplete) {
+	const addCardRemovedHandler = function(onComplete) {
 		removeAllHandlersForSignal('org.ofono', '/', 'org.ofono.HandsfreeAudioManager', 'CardRemoved', function() {
 			addSignalHandler('org.ofono', '/', 'org.ofono.HandsfreeAudioManager', 'CardRemoved', function(path) {	
 				var keys = Object.keys(self.cards);

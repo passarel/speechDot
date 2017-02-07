@@ -44,7 +44,6 @@ function Ofono() {
 						self.emit('modem_offline', modem);
 					}
 					if (name == 'Interfaces') {
-						//modem.Siri = hasSiriInterface(modem);
 						modem.Siri = hasInterface(modem, 'org.ofono.Siri');
 						self.emit('modem_interfaces_changed', modem);
 					}
@@ -113,12 +112,12 @@ function Ofono() {
 		onModems(self.modems);
 	};
 	
-	self.setVoiceRecognitionOn = function(path, onSucc, onErr) {
-		setVoiceRecognition(path, true, onSucc, onErr);
+	self.setVoiceRecognitionOn = function(path, onComplete) {
+		setVoiceRecognition(path, true, onComplete);
 	};
 	
-	self.setVoiceRecognitionOff = function(path, onSucc, onErr) {
-		setVoiceRecognition(path, false, onSucc, onErr);
+	self.setVoiceRecognitionOff = function(path, onComplete) {
+		setVoiceRecognition(path, false, onComplete);
 	};
 	
 	self.getVoiceRecognition = getVoiceRecognition;
@@ -130,6 +129,8 @@ function Ofono() {
 	self.answerCall = answerCall;
 	
 	self.hangupCall = hangupCall;
+	
+	//self.establishAudioConnection = establishHfpConnection;
 	
 	ProcessManager.on('ofono_online', function(modemsData) {
 		self.calls = {};
@@ -158,7 +159,31 @@ function Ofono() {
 
 module.exports = new Ofono();
 
-function answerCall(call, onSucc, onErr) {
+//function establishHfpConnection(bdaddr, onComplete) {
+//	var card = HandsFreeAudioAgent.getCards()[bdaddr];
+//	if (card) {
+//		bus.getInterface('org.ofono', card.path, 'org.ofono.HandsfreeAudioCard', function(err, iface) {
+//			if (notErr(err)) {
+//				iface.Connect['timeout'] = 1000;
+//				iface.Connect['finish'] = function() {
+//					console.log('[success] HandsFreeAudioAgent.Connect - ' + bdaddr);
+//					var args = Array.prototype.slice.call(arguments);
+//					args.splice(0, 0, null); // there is no error
+//					if (onComplete) onComplete.apply(null, args);
+//				};
+//				iface.Connect['error'] = function(err) {
+//					console.log('[error] HandsFreeAudioAgent.Connect - ' + err);
+//					if (onComplete) onComplete(err);
+//				};
+//				iface.Connect();
+//			}
+//		});
+//	} else {
+//		if (onComplete) onComplete('card not found');
+//	}
+//}
+
+function answerCall(call, onComplete) {
 	if (call.State !== 'incoming') {
 		console.log('answerCall failed - call.State is not incoming');
 		return;
@@ -167,11 +192,11 @@ function answerCall(call, onSucc, onErr) {
 		if (notErr(err)) {
 			iface.Answer['timeout'] = 2000;
 			iface.Answer['finish'] = function() {
-				if (onSucc) onSucc();
+				if (onComplete) onComplete.apply(null, [null]);
 			};
 			iface.Answer['error'] = function(err) {
-				console.log(err);
-				if (onErr) onErr(err);
+				console.log('[error] Ofono.answerCall(' + call.path + ') - ' + err);
+				if (onComplete) onComplete(err);
 			};
 			iface.Answer();
 		}
@@ -186,7 +211,7 @@ function hangupCall(call, onComplete) {
 				if (onComplete) onComplete.apply(null, [null]);
 			};
 			iface.Hangup['error'] = function(err) {
-				console.log('[error] Ofono.hangup call(' + call.path + ') - ' + err);
+				console.log('[error] Ofono.hangupCall(' + call.path + ') - ' + err);
 				if (onComplete) onComplete(err);
 			};
 			iface.Hangup();
@@ -194,16 +219,16 @@ function hangupCall(call, onComplete) {
 	});
 }
 
-function setVoiceRecognition(path, val, onSucc, onErr) {
+function setVoiceRecognition(path, val, onComplete) {
 	bus.getInterface('org.ofono', path, 'org.ofono.Handsfree', function(err, iface) {
 		if (notErr(err)) {
 			iface.SetProperty['timeout'] = 2000;
 			iface.SetProperty['finish'] = function() {
-				if (onSucc) onSucc();
+				if (onComplete) onComplete.apply(null, [null]);
 			};
 			iface.SetProperty['error'] = function(err) {
-				console.log(err);
-				if (onErr) onErr(err);
+				console.log('[error] Ofono.setVoiceRecognition(' + path + ',' + val + ') - ' + err);
+				if (onComplete) onComplete(err);
 			};
 			iface.SetProperty('VoiceRecognition', val);
 		}
@@ -218,7 +243,7 @@ function setSpeakerVolume(path, val, onComplete) {
 				if (onComplete) onComplete.apply(null, [null]);
 			};
 			iface.SetProperty['error'] = function(err) {
-				console.log('[error] setSpeakerVolume(' + path + ') - ' + err);
+				console.log('[error] Ofono.setSpeakerVolume(' + path + ') - ' + err);
 				if (onComplete) onComplete(err);
 			};
 			iface.SetProperty('SpeakerVolume', val);
@@ -234,7 +259,7 @@ function setMicrophoneVolume(path, val, onComplete) {
 				if (onComplete) onComplete.apply(null, [null]);
 			};
 			iface.SetProperty['error'] = function(err) {
-				console.log('[error] setMicrophoneVolume(' + path + ') - ' + err);
+				console.log('[error] Ofono.setMicrophoneVolume(' + path + ') - ' + err);
 				if (onComplete) onComplete(err);
 			};
 			iface.SetProperty('MicrophoneVolume', val);
@@ -242,21 +267,21 @@ function setMicrophoneVolume(path, val, onComplete) {
 	});
 }
 
-function getVoiceRecognition(modem, onVal, onErr) {
+function getVoiceRecognition(modem, onComplete) {
 	bus.getInterface('org.ofono', modem.path, 'org.ofono.Handsfree', function(err, iface) {
 		if (notErr(err)) {
 			iface.GetProperties['timeout'] = 2000;
 			iface.GetProperties['finish'] = function(props) {
 				Object.keys(props).forEach(function(key) {
 					if (key == 'VoiceRecognition') {
-						onVal(props[key]);
+						if (onComplete) onComplete(null, props[key]);
 						return;
 					}
 				});
 			};
 			iface.GetProperties['error'] = function(err) {
-				console.log(err);
-				if (onErr) onErr(err);
+				console.log('[error] Ofono.getVoiceRecognition(' + modem.path + ') - ' + err);
+				if (onComplete) onComplete(err);
 			};
 			iface.GetProperties();
 		}
@@ -274,7 +299,6 @@ function parseModem(path, props) {
 	const modem = props;
 	modem.path = path;
 	modem.bdaddr = parseBdaddr(path);
-	//modem.Siri = hasSiriInterface(modem);
 	modem.Siri = hasInterface(modem, 'org.ofono.Siri');
 	return modem;
 }

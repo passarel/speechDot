@@ -4,9 +4,6 @@ TOOLSET := target
 TARGET := alsa
 DEFS_Debug := \
 	'-DNODE_GYP_MODULE_NAME=alsa' \
-	'-DUSING_UV_SHARED=1' \
-	'-DUSING_V8_SHARED=1' \
-	'-DV8_DEPRECATION_WARNINGS=1' \
 	'-D_LARGEFILE_SOURCE' \
 	'-D_FILE_OFFSET_BITS=64' \
 	'-DLIB_EXPAT=expat' \
@@ -36,17 +33,14 @@ CFLAGS_CC_Debug := \
 	-std=gnu++0x
 
 INCS_Debug := \
-	-I/home/pi/.node-gyp/7.1.0/include/node \
-	-I/home/pi/.node-gyp/7.1.0/src \
-	-I/home/pi/.node-gyp/7.1.0/deps/uv/include \
-	-I/home/pi/.node-gyp/7.1.0/deps/v8/include \
+	-I/home/pi/.node-gyp/6.7.0/include/node \
+	-I/home/pi/.node-gyp/6.7.0/src \
+	-I/home/pi/.node-gyp/6.7.0/deps/uv/include \
+	-I/home/pi/.node-gyp/6.7.0/deps/v8/include \
 	-I$(srcdir)/node_modules/nan
 
 DEFS_Release := \
 	'-DNODE_GYP_MODULE_NAME=alsa' \
-	'-DUSING_UV_SHARED=1' \
-	'-DUSING_V8_SHARED=1' \
-	'-DV8_DEPRECATION_WARNINGS=1' \
 	'-D_LARGEFILE_SOURCE' \
 	'-D_FILE_OFFSET_BITS=64' \
 	'-DLIB_EXPAT=expat' \
@@ -74,10 +68,10 @@ CFLAGS_CC_Release := \
 	-std=gnu++0x
 
 INCS_Release := \
-	-I/home/pi/.node-gyp/7.1.0/include/node \
-	-I/home/pi/.node-gyp/7.1.0/src \
-	-I/home/pi/.node-gyp/7.1.0/deps/uv/include \
-	-I/home/pi/.node-gyp/7.1.0/deps/v8/include \
+	-I/home/pi/.node-gyp/6.7.0/include/node \
+	-I/home/pi/.node-gyp/6.7.0/src \
+	-I/home/pi/.node-gyp/6.7.0/deps/uv/include \
+	-I/home/pi/.node-gyp/6.7.0/deps/v8/include \
 	-I$(srcdir)/node_modules/nan
 
 OBJS := \

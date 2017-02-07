@@ -206,7 +206,6 @@ function Bluez() {
 						device.path = path;
 						addDevice(device);
 					}
-					//if (ifaces['org.bluez.MediaTransport1']) {}
 				}, onComplete);
 			});
 		}

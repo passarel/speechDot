@@ -44,7 +44,17 @@ module.exports = {
 
 	sayThisText: sayThisText,
 	
-	sayThisName: sayThisName
+	sayThisName: sayThisName,
+	
+	setLocalSpeakerVolume: (val) => {
+		execSync('amixer set Master ' + val + '% -q');
+		console.log('Local speaker volume set to ' + val + '%');
+	},
+
+	setLocalMicVolume: (val) => {
+		execSync('amixer set Capture ' + val + '% -q');
+		console.log('Local mic volume set to ' + val + '%');
+	}
 	
 }
 
