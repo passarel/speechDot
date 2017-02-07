@@ -53,6 +53,12 @@ function Ofono() {
 		});
 	}
 	
+	const removeCall = function(path) {
+		removeAllHandlersForPropertyChangedSignal('org.ofono', path, 'org.ofono.VoiceCall');
+		self.calls[path] = undefined;
+		self.emit('call_removed', path);
+	}
+	
 	const addVoiceCallSignalHandler = function(modem, onComplete) {
 		const addCallAddedHandler = function(onComplete) {
 			removeAllHandlersForSignal('org.ofono', modem.path, 'org.ofono.VoiceCallManager', 'CallAdded', function() {
@@ -64,9 +70,11 @@ function Ofono() {
 						console.log('[org.ofono.VoiceCall] PropertyChanged: ' + name + '=' + val);
 						if (name == 'State') {
 							self.emit('call_state_changed', call, val);
+							if (val == 'disconnected') {
+								removeCall(call.path);
+							}
 						}
 					});
-					console.log('emitting call added for call -> ' + call.path);
 					self.emit('call_added', call, modem);
 				}, onComplete);
 			});
@@ -75,11 +83,7 @@ function Ofono() {
 			removeAllHandlersForSignal('org.ofono', modem.path, 'org.ofono.VoiceCallManager', 'CallRemoved', function() {
 				addSignalHandler('org.ofono', modem.path, 'org.ofono.VoiceCallManager', 'CallRemoved', function(path) {
 					console.log('VoiceCallManager.CallRemoved: ' + path);
-					self.calls[path] = undefined;
-					self.emit('call_removed', path, modem);
-					setTimeout(function() {
-						removeAllHandlersForPropertyChangedSignal('org.ofono', path, 'org.ofono.VoiceCall');
-					}, 1000); //wait a second to remove incase call was hungup immediatly
+					removeCall(path);
 				}, onComplete)
 			});
 		}
@@ -123,13 +127,9 @@ function Ofono() {
 	
 	self.setMicrophoneVolume = setMicrophoneVolume;
 	
-	//self.setSiriEyesFreeModeOn = setSiriEyesFreeModeOn;
-	
 	self.answerCall = answerCall;
 	
 	self.hangupCall = hangupCall;
-	
-	//self.establishAudioConnection = establishAudioConnection;
 	
 	ProcessManager.on('ofono_online', function(modemsData) {
 		self.calls = {};
@@ -158,30 +158,6 @@ function Ofono() {
 
 module.exports = new Ofono();
 
-//function establishAudioConnection(bdaddr, onComplete) {
-//	var card = HandsFreeAudioAgent.getCards()[bdaddr];
-//	if (card) {
-//		bus.getInterface('org.ofono', card.path, 'org.ofono.HandsfreeAudioCard', function(err, iface) {
-//			if (notErr(err)) {
-//				iface.Connect['timeout'] = 1000;
-//				iface.Connect['finish'] = function() {
-//					console.log('[success] HandsFreeAudioAgent.Connect - ' + bdaddr);
-//					var args = Array.prototype.slice.call(arguments);
-//					args.splice(0, 0, null); // there is no error
-//					if (onComplete) onComplete.apply(null, args);
-//				};
-//				iface.Connect['error'] = function(err) {
-//					console.log('[error] HandsFreeAudioAgent.Connect - ' + err);
-//					if (onComplete) onComplete(err);
-//				};
-//				iface.Connect();
-//			}
-//		});
-//	} else {
-//		if (onComplete) onComplete('card not found');
-//	}
-//}
-
 function answerCall(call, onSucc, onErr) {
 	if (call.State !== 'incoming') {
 		console.log('answerCall failed - call.State is not incoming');
@@ -202,16 +178,16 @@ function answerCall(call, onSucc, onErr) {
 	});
 }
 
-function hangupCall(call, onSucc, onErr) {
+function hangupCall(call, onComplete) {
 	bus.getInterface('org.ofono', call.path, 'org.ofono.VoiceCall', function(err, iface) {
 		if (notErr(err)) {
 			iface.Hangup['timeout'] = 2000;
 			iface.Hangup['finish'] = function() {
-				if (onSucc) onSucc();
+				if (onComplete) onComplete.apply(null, [null]);
 			};
 			iface.Hangup['error'] = function(err) {
-				console.log(err);
-				if (onErr) onErr(err);
+				console.log('[error] Ofono.hangup call(' + call.path + ') - ' + err);
+				if (onComplete) onComplete(err);
 			};
 			iface.Hangup();
 		}
@@ -266,24 +242,6 @@ function setMicrophoneVolume(path, val, onComplete) {
 	});
 }
 
-/*
-function setSiriEyesFreeModeOn(path, onSucc, onErr) {
-	bus.getInterface('org.ofono', path, 'org.ofono.Siri', function(err, iface) {
-		if (notErr(err)) {
-			iface.SetProperty['timeout'] = 2000;
-			iface.SetProperty['finish'] = function() {
-				if (onSucc) onSucc();
-			};
-			iface.SetProperty['error'] = function(err) {
-				console.log(err);
-				if (onErr) onErr(err);
-			};
-			iface.SetProperty('EyesFreeMode', 'enabled');
-		}
-	});
-}
-*/
-
 function getVoiceRecognition(modem, onVal, onErr) {
 	bus.getInterface('org.ofono', modem.path, 'org.ofono.Handsfree', function(err, iface) {
 		if (notErr(err)) {
@@ -324,19 +282,6 @@ function parseModem(path, props) {
 function hasInterface(modem, iface) {
 	return modem.Interfaces.includes(iface);
 }
-
-/*
-function hasSiriInterface(modem) {
-	if (modem.Interfaces) {
-		for (var i=0; i<modem.Interfaces.length; i++) {
-			if (modem.Interfaces[i] == 'org.ofono.Siri') {
-				return true;
-			}
-		}
-	}
-	return false;
-}
-*/
 
 function parseBdaddr(path) {
 	return path

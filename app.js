@@ -26,7 +26,7 @@ var yesNoConfirmation = null;
 var isReady = false;
 
 ProcessManager.on('sensory_online', function(sensory) {
-	setLocalSpeakerVolume(20);
+	setLocalSpeakerVolume(45);
 	setLocalMicVolume(85);
 	addOfonoHandlers();
 	sensory.stderr.on('data', onSensoryData);
@@ -82,13 +82,12 @@ function addOfonoHandlers() {
 	Ofono.on('call_added', function(call, modem) {
 		if (call.State === 'incoming') {
 			incomingCall = call;
-			Ofono.removeAllListeners('call_state_changed');
 			Ofono.once('call_state_changed', function(_call, state) {
 				if (state == 'active' && _call.path == call.path) {
 		 			activeCall = incomingCall;
 		 			incomingCall = null;
 				}
-			})
+			});
 			playAudioResponseAsync('incoming_call_on.wav', function() {
 				if (incomingCall == null) return;
 				sayThisNameAsync(modem.Name, function() {
@@ -113,6 +112,8 @@ function addOfonoHandlers() {
 
 	Ofono.on('call_removed', function() {
 		incomingCall = null;
+		activeCall = null;
+		Ofono.removeAllListeners('call_state_changed');
 	});
 }
 
@@ -137,15 +138,17 @@ function onSensoryData(data) {
     if (AlexaAvs.processingRequest === true) {
             return;
     }
-   
+
     if (_data === 'ok_google') {
  	    console.log('onOkGoogle');
  		onOkGoogle();
  	}
+    
  	if (_data === 'hey siri') {
  		console.log('onHeySiri');
  		onHeySiri();
     }
+ 	
  	if (_data === 'hey_cortana') {
  		console.log('onHeyCortana');
  		onHeyCortana();
@@ -155,26 +158,19 @@ function onSensoryData(data) {
 	    console.log('onAlexa');
 	    onAlexa();
 	}
- 	
+
  	if (incomingCall && (_data === 'Jessina Dismiss')) {
- 		Ofono.hangupCall(incomingCall, function() {
- 			incomingCall = null;
- 		});
+ 		Ofono.hangupCall(incomingCall);
  		return;
  	}
- 	
+
  	if (incomingCall && (_data === 'Jessina Answer')) {
- 		Ofono.answerCall(incomingCall, function() {
- 			activeCall = incomingCall;
- 			incomingCall = null;
- 		});
+ 		Ofono.answerCall(incomingCall);
  		return;
  	}
  	
  	if (activeCall && (_data === 'Jessina Hang_Up')) {
- 		Ofono.hangupCall(activeCall, function() {
- 			activeCall = null;
- 		});
+ 		Ofono.hangupCall(activeCall);
  		return;
  	}
 
