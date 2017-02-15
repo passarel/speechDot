@@ -23,7 +23,7 @@ var yesNoConfirmation = null;
 var isReady = false;
 
 ProcessManager.on('sensory_online', function(sensory) {
-	setLocalSpeakerVolume(15);
+	setLocalSpeakerVolume(45);
 	setLocalMicVolume(85);
 	addOfonoHandlers();
 	sensory.stderr.on('data', onSensoryData);
